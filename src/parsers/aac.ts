@@ -1,7 +1,10 @@
 import * as debug from '../util/debug';
-let aacHeader;
+import {BaseRemuxer, Track} from "../remuxer/base";
+
+let aacHeader:Uint8Array;
+
 export class AACParser {
-    
+
     static get samplingRateMap() {
         return [96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000, 7350];
     }
@@ -10,24 +13,25 @@ export class AACParser {
         return aacHeader;
     }
 
-    static getHeaderLength(data) {
+    static getHeaderLength(data:Uint8Array) {
         return (data[1] & 0x01 ? 7 : 9);  // without CRC 7 and with CRC 9 Refs: https://wiki.multimedia.cx/index.php?title=ADTS
     }
 
-    static getFrameLength(data) {
+    static getFrameLength(data:Uint8Array) {
         return ((data[3] & 0x03) << 11) | (data[4] << 3) | ((data[5] & 0xE0) >>> 5); // 13 bits length ref: https://wiki.multimedia.cx/index.php?title=ADTS
     }
 
-    static isAACPattern (data) {
+    static isAACPattern (data:Uint8Array) {
         return data[0] === 0xff && (data[1] & 0xf0) === 0xf0 && (data[1] & 0x06) === 0x00;
     }
 
-    static extractAAC(buffer) {
+    static extractAAC(buffer:Uint8Array) {
         let i = 0,
             length = buffer.byteLength,
-            result = [],
             headerLength,
             frameLength;
+
+        const result:Uint8Array[] = [];
 
         if (!AACParser.isAACPattern(buffer)) {
             debug.error('Invalid ADTS audio format');
@@ -47,7 +51,10 @@ export class AACParser {
         return result;
     }
 
-    constructor(remuxer) {
+    readonly remuxer: BaseRemuxer;
+    readonly track: Track;
+
+    constructor(remuxer:BaseRemuxer) {
         this.remuxer = remuxer;
         this.track = remuxer.mp4track;
     }
@@ -60,7 +67,7 @@ export class AACParser {
             headerData = AACParser.getAACHeaderData;
 
         if (!headerData) return;
-            
+
         objectType = ((headerData[2] & 0xC0) >>> 6) + 1;
         sampleIndex = ((headerData[2] & 0x3C) >>> 2);
         channelCount = ((headerData[2] & 0x01) << 2);

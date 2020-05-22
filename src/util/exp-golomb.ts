@@ -4,9 +4,12 @@
 
 export class ExpGolomb {
 
-    constructor(data) {
+    private readonly data: Uint8Array;
+    private index = 0;
+    private bitLength: number;
+
+    constructor(data:Uint8Array) {
         this.data = data;
-        this.index = 0;
         this.bitLength = data.byteLength * 8;
     }
 
@@ -14,7 +17,7 @@ export class ExpGolomb {
         return this.bitLength - this.index;
     }
 
-    skipBits(size) {
+    skipBits(size:number) {
         // console.log(`  skip bits: size=${size}, ${this.index}.`);
         if (this.bitsAvailable < size) {
             //throw new Error('no bytes available');
@@ -23,14 +26,14 @@ export class ExpGolomb {
         this.index += size;
     }
 
-    readBits(size, moveIndex = true) {
+    readBits(size:number, moveIndex = true) {
         // console.log(`  read bits: size=${size}, ${this.index}.`);
         const result = this.getBits(size, this.index, moveIndex);
         // console.log(`    read bits: result=${result}`);
         return result;
     }
 
-    getBits(size, offsetBits, moveIndex = true) {
+    getBits(size:number, offsetBits:number, moveIndex = true) : number {
         if (this.bitsAvailable < size) {
             //throw new Error('no bytes available');
             return 0;

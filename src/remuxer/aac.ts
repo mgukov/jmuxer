@@ -1,42 +1,38 @@
 import * as debug from '../util/debug';
-import { AACParser } from '../parsers/aac.js';
-import { BaseRemuxer } from './base.js';
+import {AACParser} from '../parsers/aac.js';
+import {BaseRemuxer} from './base.js';
+import {TrackType} from "../controller/remux";
 
 export class AACRemuxer extends BaseRemuxer {
 
-    constructor() {
-        super();
-        this.readyToDecode = false;
-        this.nextDts = 0;
-        this.dts = 0;
-        this.timescale = 1000;
+    nextDts = 0;
+    timescale = 1000;
 
-        this.mp4track = {
+    private readonly aac: AACParser;
+
+    constructor() {
+        super({
             id: BaseRemuxer.getTrackID(),
-            type: 'audio',
+            type: TrackType.Audio,
             channelCount: 0,
             len: 0,
             fragmented: true,
-            timescale: this.timescale,
-            duration: this.timescale,
-            samples: [],
-            config: '',
-            codec: '',
-        };
-
-        this.samples = [];
+            timescale: 1000,
+            duration: 1000,
+            samples: []
+        });
         this.aac = new AACParser(this);
     }
 
     resetTrack() {
         this.readyToDecode = false;
-        this.mp4track.codec = '';
-        this.mp4track.channelCount = '';
-        this.mp4track.config = '';
+        this.mp4track.codec = undefined;
+        this.mp4track.channelCount = undefined;
+        this.mp4track.config = undefined;
         this.mp4track.timescale = this.timescale;
     }
 
-    remux(samples) {
+    remux(samples:any[]) {
         let config,
             sample,
             size,

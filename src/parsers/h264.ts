@@ -1,10 +1,11 @@
 import { ExpGolomb } from '../util/exp-golomb.js';
 import { NALU } from '../util/nalu.js';
 import * as debug from '../util/debug';
+import {BaseRemuxer} from "../remuxer/base";
 
 export class H264Parser {
 
-    static extractNALu(buffer) {
+    static extractNALu(buffer:Uint8Array) {
         let i = 0,
             length = buffer.byteLength,
             value,
@@ -61,7 +62,7 @@ export class H264Parser {
      * @param count {number} the number of entries in this scaling list
      * @see Recommendation ITU-T H.264, Section 7.3.2.1.1.1
      */
-    static skipScalingList(decoder, count) {
+    static skipScalingList(decoder:any, count:number) {
         let lastScale = 8,
             nextScale = 8,
             deltaScale;
@@ -83,7 +84,7 @@ export class H264Parser {
      * sequence parameter set, including the dimensions of the
      * associated video frames.
      */
-    static readSPS(data) {
+    static readSPS(data:Uint8Array) {
         let decoder = new ExpGolomb(data);
         let frameCropLeftOffset = 0,
             frameCropRightOffset = 0,
@@ -219,20 +220,23 @@ export class H264Parser {
         };
     }
 
-    constructor(remuxer) {
+    readonly remuxer:BaseRemuxer;
+    track: any;
+
+    constructor(remuxer:BaseRemuxer) {
         this.remuxer = remuxer;
         this.track = remuxer.mp4track;
     }
 
-    parseSPS(sps) {
-        var config = H264Parser.readSPS(new Uint8Array(sps));
+    parseSPS(sps:Uint8Array) {
+        const config = H264Parser.readSPS(new Uint8Array(sps));
 
         this.track.width = config.width;
         this.track.height = config.height;
         this.track.sps = [new Uint8Array(sps)];
         this.track.codec = 'avc1.';
 
-        let codecarray = new DataView(sps.buffer, sps.byteOffset + 1, 4);
+        const codecarray = new DataView(sps.buffer, sps.byteOffset + 1, 4);
         for (let i = 0; i < 3; ++i) {
             var h = codecarray.getUint8(i).toString(16);
             if (h.length < 2) {
@@ -242,11 +246,11 @@ export class H264Parser {
         }
     }
 
-    parsePPS(pps) {
+    parsePPS(pps:Uint8Array) {
         this.track.pps = [new Uint8Array(pps)];
     }
 
-    parseNAL(unit) {
+    parseNAL(unit:any) {
         if (!unit) return false;
 
         let push = false;

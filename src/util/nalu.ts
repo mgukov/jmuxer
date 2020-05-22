@@ -18,7 +18,7 @@ export class NALU {
         };
     }
 
-    static type(nalu) {
+    static type(nalu:NALU) {
         if (nalu.ntype in NALU.TYPES) {
             return NALU.TYPES[nalu.ntype];
         } else {
@@ -26,7 +26,11 @@ export class NALU {
         }
     }
 
-    constructor(data) {
+
+    readonly payload: Uint8Array;
+    readonly nri: number;
+    readonly ntype: number;
+    constructor(data:Uint8Array) {
         this.payload = data;
         this.nri = (this.payload[0] & 0x60) >> 5;
         this.ntype = this.payload[0] & 0x1f;

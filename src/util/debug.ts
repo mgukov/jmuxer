@@ -1,5 +1,5 @@
-let logger;
-let errorLogger;
+let logger:any;
+let errorLogger:any;
 
 export function setLogger() {
     /*eslint-disable */
@@ -12,12 +12,12 @@ export function isEnable() {
     return logger != null;
 }
 
-export function log(message, ...optionalParams) {
+export function log(message:string, ...optionalParams:any) {
     if (logger) {
         logger(message, ...optionalParams);
     }
 }
-export function error(message, ...optionalParams) {
+export function error(message:string, ...optionalParams:any) {
     if (errorLogger) {
         errorLogger(message, ...optionalParams);
     }

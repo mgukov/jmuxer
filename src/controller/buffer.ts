@@ -1,19 +1,21 @@
 import * as debug from '../util/debug';
-import Event from '../util/event';
+import {Event} from '../util/event';
 import { appendByteArray } from '../util/utils.js';
 
 export default class BufferController extends Event {
-    constructor(sourceBuffer, type) {
+
+    private readonly bufferType:string;
+    private queue:Uint8Array|null = new Uint8Array();
+
+    private cleaning = false;
+    private pendingCleaning = 0;
+    private cleanOffset = 30;
+    private cleanRanges:number[][] = [];
+    private sourceBuffer: SourceBuffer|null;
+
+    constructor(sourceBuffer:SourceBuffer, type:string) {
         super('buffer');
-
-        this.type = type;
-        this.queue = new Uint8Array();
-
-        this.cleaning = false;
-        this.pendingCleaning = 0;
-        this.cleanOffset = 30;
-        this.cleanRanges = [];
-
+        this.bufferType = type;
         this.sourceBuffer = sourceBuffer;
         this.sourceBuffer.addEventListener('updateend', ()=> {
             if (this.pendingCleaning > 0) {
@@ -28,7 +30,7 @@ export default class BufferController extends Event {
         });
 
         this.sourceBuffer.addEventListener('error', ()=> {
-            this.dispatch('error', { type: this.type, name: 'buffer', error: 'buffer error' });
+            this.dispatch('error', { type: this.bufferType, name: 'buffer', error: 'buffer error' });
         });
     }
 
@@ -44,12 +46,18 @@ export default class BufferController extends Event {
             return;
         }
         let range = this.cleanRanges.shift();
-        debug.log(`${this.type} remove range [${range[0]} - ${range[1]})`);
         this.cleaning = true;
-        this.sourceBuffer.remove(range[0], range[1]);
+        if (range && this.sourceBuffer) {
+            debug.log(`${this.bufferType} remove range [${range[0]} - ${range[1]})`);
+            this.sourceBuffer.remove(range[0], range[1]);
+        }
     }
 
-    initCleanup(cleanMaxLimit) {
+    initCleanup(cleanMaxLimit:number) {
+        if (!this.sourceBuffer) {
+            return;
+        }
+
         if (this.sourceBuffer.updating) {
             this.pendingCleaning = cleanMaxLimit;
             return;
@@ -71,9 +79,9 @@ export default class BufferController extends Event {
     }
 
     doAppend() {
-        if (!this.queue.length) return;
+        if (!this.queue || !this.queue.length) return;
 
-        if (this.sourceBuffer.updating) {
+        if (!this.sourceBuffer || this.sourceBuffer.updating) {
             return;
         }
 
@@ -82,16 +90,20 @@ export default class BufferController extends Event {
             this.queue = new Uint8Array();
         } catch (e) {
             if (e.name === 'QuotaExceededError') {
-                debug.log(`${this.type} buffer quota full`);
-                this.dispatch('error', { type: this.type, name: 'QuotaExceeded', error: 'buffer error' });
+                debug.log(`${this.bufferType} buffer quota full`);
+                this.dispatch('error', { type: this.bufferType, name: 'QuotaExceeded', error: 'buffer error' });
                 return;
             }
-            debug.error(`Error occured while appending ${this.type} buffer -  ${e.name}: ${e.message}`);
-            this.dispatch('error', { type: this.type, name: 'unexpectedError', error: 'buffer error' });
+            debug.error(`Error occured while appending ${this.bufferType} buffer -  ${e.name}: ${e.message}`);
+            this.dispatch('error', { type: this.bufferType, name: 'unexpectedError', error: 'buffer error' });
         }
     }
 
-    feed(data) {
-        this.queue = appendByteArray(this.queue, data);
+    feed(data:Uint8Array) {
+        if (this.queue) {
+            this.queue = appendByteArray(this.queue, data);
+        } else {
+            this.queue = new Uint8Array(data);
+        }
     }
 }

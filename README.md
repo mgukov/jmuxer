@@ -149,7 +149,7 @@ Player Example for raw h264 only
 -----------
 Assuming you are still on `example` directory. Now run followngs:
 
-*node server-h264.js*
+*node server-h264.ts*
 
 then, visit *example/index-h264.html* page using any webserver.
 

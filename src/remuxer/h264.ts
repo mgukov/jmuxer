@@ -1,31 +1,26 @@
 import * as debug from '../util/debug';
-import { H264Parser } from '../parsers/h264.js';
-import { BaseRemuxer } from './base.js';
+import {H264Parser} from '../parsers/h264.js';
+import {BaseRemuxer} from './base.js';
+import {TrackType} from "../controller/remux";
 
 export class H264Remuxer extends BaseRemuxer {
 
-    constructor() {
-        super();
-        this.readyToDecode = false;
-        this.nextDts = 0;
-        this.dts = 0;
-        this.timescale = 1000;
+    private nextDts = 0;
+    protected timescale = 1000;
+    private h264: H264Parser;
 
-        this.mp4track = {
+    constructor() {
+        super({
             id: BaseRemuxer.getTrackID(),
-            type: 'video',
+            type: TrackType.Video,
             len: 0,
             fragmented: true,
-            sps: '',
-            pps: '',
             width: 0,
             height: 0,
-            timescale: this.timescale,
-            duration: this.timescale,
+            timescale: 1000,
+            duration: 1000,
             samples: [],
-        };
-
-        this.samples = [];
+        });
         this.h264 = new H264Parser(this);
     }
 
@@ -35,7 +30,7 @@ export class H264Remuxer extends BaseRemuxer {
         this.mp4track.pps = '';
     }
 
-    remux(samples) {
+    remux(samples:any[]) {
         let sample,
             units,
             unit,
