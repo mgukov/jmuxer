@@ -2,7 +2,7 @@
 ![Maintenance](https://img.shields.io/maintenance/yes/2020.svg)
 ![license](https://img.shields.io/github/license/mashape/apistatus.svg)
 
-jMuxer
+mse_muxer
 -------
 jMuxer - a simple javascript mp4 muxer for non-standard streaming communications protocol. Basically it does not care about communication protocol and it is simply a javscript mp4 remuxer intended to pay media file in the browser using media source extension. It expects raw H264 video data and AAC audio data in ADTS container as an input.
 
