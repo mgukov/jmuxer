@@ -23,7 +23,7 @@ export class OpusParser extends AudioParser {
     }
 
     static isOpusPattern (data:Uint8Array) {
-        return data[0] === 0xff && (data[1] & 0xf0) === 0xf0 && (data[1] & 0x06) === 0x00;
+        return true;//data[0] === 0xff && (data[1] & 0xf0) === 0xf0 && (data[1] & 0x06) === 0x00;
     }
 
     static extractOpus(buffer:Uint8Array) {
