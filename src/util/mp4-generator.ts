@@ -153,25 +153,21 @@ export class MP4 {
     }
 
     static box(type:number[], ...payload:Uint8Array[]) {
-        let size = 8,
-            i = payload.length,
-            len = i,
-            result;
         // calculate the total size we need to allocate
-        while (i--) {
-            size += payload[i].byteLength;
-        }
-        result = new Uint8Array(size);
+        let size = payload.reduce((prev, val) =>  prev + val.byteLength, 8);
+
+        const result = new Uint8Array(size);
         result[0] = (size >> 24) & 0xff;
         result[1] = (size >> 16) & 0xff;
         result[2] = (size >> 8) & 0xff;
         result[3] = size & 0xff;
         result.set(type, 4);
         // copy the payload into the result
-        for (let i = 0, size = 8; i < len; ++i) {
+
+        for (let i = 0, pos = 8; i < payload.length; ++i) {
             // copy payload[i] array @ offset size
-            result.set(payload[i], size);
-            size += payload[i].byteLength;
+            result.set(payload[i], pos);
+            pos += payload[i].byteLength;
         }
         return result;
     }
@@ -233,24 +229,25 @@ export class MP4 {
      * @param tracks... (optional) {array} the tracks associated with this movie
      */
     static moov(tracks:Track[], duration:number, timescale:number) {
-        let i = tracks.length,
-            boxes = [];
+        let i = tracks.length;
+        const boxes:Uint8Array[] = [];
 
         while (i--) {
             boxes[i] = MP4.trak(tracks[i]);
         }
 
         let args = [MP4.mvhd(timescale, duration)].concat(boxes).concat(MP4.mvex(tracks));
-        return MP4.box.apply(null, [MP4.types.moov, ...args]);
+        return MP4.box( MP4.types.moov, ...args);
     }
 
     static mvex(tracks:Track[]) {
         let i = tracks.length,
             boxes = [];
+
         while (i--) {
             boxes[i] = MP4.trex(tracks[i]);
         }
-        return MP4.box.apply(null, [MP4.types.mvex, ...boxes]);
+        return MP4.box(MP4.types.mvex, ...boxes);
     }
 
     static mvhd(timescale:number, duration:number) {
