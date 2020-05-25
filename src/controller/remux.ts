@@ -38,7 +38,7 @@ export default class RemuxController extends Event {
             this.tracks.set(TrackType.Video, new H264Remuxer());
             this.trackTypes.push(TrackType.Video);
         }
-        if (type === 'audio' || type === 'both') {
+        if (type === 'audio' || type === TrackType.Both) {
             this.tracks.set(TrackType.Audio, new AACRemuxer());
             this.trackTypes.push(TrackType.Audio);
         }

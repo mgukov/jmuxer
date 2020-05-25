@@ -232,7 +232,7 @@ export class MP4 {
     /**
      * @param tracks... (optional) {array} the tracks associated with this movie
      */
-    static moov(tracks:any[], duration:number, timescale:number) {
+    static moov(tracks:Track[], duration:number, timescale:number) {
         let i = tracks.length,
             boxes = [];
 
@@ -244,7 +244,7 @@ export class MP4 {
         return MP4.box.apply(null, [MP4.types.moov, ...args]);
     }
 
-    static mvex(tracks:any[]) {
+    static mvex(tracks:Track[]) {
         let i = tracks.length,
             boxes = [];
         while (i--) {
@@ -397,8 +397,8 @@ export class MP4 {
         );
     }
 
-    static esds(track:any) {
-        var configlen = track.config.byteLength;
+    static esds(track:Track) {
+        let configlen = 0;
         let data = new Uint8Array(26 + configlen + 3);
         data.set([
             0x00, // version 0
@@ -420,7 +420,10 @@ export class MP4 {
             0x05, // descriptor_type
             configlen,
         ]);
-        data.set(track.config, 26);
+        if (track.config) {
+            configlen = track.config.byteLength;
+            data.set(track.config, 26);
+        }
         data.set([0x06, 0x01, 0x02], 26 + configlen);
         // return new Uint8Array([
         //     0x00, // version 0
@@ -444,15 +447,18 @@ export class MP4 {
         return data;
     }
 
-    static mp4a(track:any) {
-        var audiosamplerate = track.audiosamplerate;
+    static mp4a(track:Track) {
+        const audiosamplerate = track.audiosamplerate ?? 24000;
+        const channelCount = track.channelCount ?? 1;
+
+
         return MP4.box(MP4.types.mp4a, new Uint8Array([
             0x00, 0x00, 0x00, // reserved
             0x00, 0x00, 0x00, // reserved
             0x00, 0x01, // data_reference_index
             0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, // reserved
-            0x00, track.channelCount, // channelcount
+            0x00, channelCount, // channelcount
             0x00, 0x10, // sampleSize:16bits
             0x00, 0x00, // pre_defined
             0x00, 0x00, // reserved2
@@ -470,12 +476,12 @@ export class MP4 {
         }
     }
 
-    static tkhd(track:any) {
+    static tkhd(track:Track) {
         var id = track.id,
             duration = track.duration,
-            width = track.width,
-            height = track.height,
-            volume = track.volume;
+            width = track.width!,
+            height = track.height!,
+            volume = track.volume ?? 0;
         return MP4.box(MP4.types.tkhd, new Uint8Array([
             0x00, // version 0
             0x00, 0x00, 0x07, // flags
@@ -626,7 +632,7 @@ export class MP4 {
         return MP4.box(MP4.types.trun, array);
     }
 
-    static initSegment(tracks:any, duration:number, timescale:number) {
+    static initSegment(tracks:Track[], duration:number, timescale:number) {
         if (!MP4.initialized) {
             MP4.init();
             MP4.initialized = true;

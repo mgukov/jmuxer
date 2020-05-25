@@ -20,6 +20,8 @@ export type Track = {
     codec?: string;
     channelCount?: number;
     config?: Uint8Array;
+    volume?:number;
+    audiosamplerate?:number;
 };
 
 
