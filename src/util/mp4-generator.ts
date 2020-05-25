@@ -356,8 +356,8 @@ export class MP4 {
             ].concat(sps).concat([
                 track.pps.length, // numOfPictureParameterSets
             ]).concat(pps))), // "PPS"
-            width = track.width,
-            height = track.height;
+            width = track.width!,
+            height = track.height!;
         // console.log('avcc:' + Hex.hexDump(avcc));
         return MP4.box(MP4.types.avc1, new Uint8Array([
             0x00, 0x00, 0x00, // reserved

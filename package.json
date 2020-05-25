@@ -2,13 +2,10 @@
   "name": "jmuxer",
   "version": "1.0.0",
   "description": "jMuxer - a simple javascript mp4 muxer for non-standard streaming communications protocol",
-  "main": "dist/jmuxer.min.js",
+  "main": "dist/jmuxer.js",
+  "types": "src/jmuxer.ts",
   "scripts": {
-    "build": "rollup -c",
-    "dev": "rollup -c --watch",
-    "pro": "NODE_ENV=production rollup -c",
-    "lint": "eslint  -c .eslintrc.json ./src/",
-    "test": "karma start karma.conf.js"
+    "install": "tsc -p ."
   },
   "keywords": [
     "h264",
@@ -29,5 +26,7 @@
     "url": "https://github.com/mgukov/jmuxer.git"
   },
   "author": "ringID web",
-  "devDependencies": {}
+  "devDependencies": {
+    "typescript": "^3.9.3"
+  }
 }
