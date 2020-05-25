@@ -2,24 +2,19 @@
   "name": "jmuxer",
   "version": "1.0.0",
   "description": "jMuxer - a simple javascript mp4 muxer for non-standard streaming communications protocol",
-  "main": "dist/jmuxer.js",
-  "types": "src/jmuxer.ts",
+  "main": "dist/index.js",
+  "types": "src/index.ts",
+
   "scripts": {
     "install": "tsc -p ."
   },
+
   "keywords": [
     "h264",
-    "raw h264",
     "aac",
     "muxer",
     "mse",
-    "adts",
-    "player",
-    "html5",
-    "mp4",
-    "rtsp",
-    "hls",
-    "jmuxer"
+    "mp4"
   ],
   "repository": {
     "type": "git",

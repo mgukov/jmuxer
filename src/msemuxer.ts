@@ -3,10 +3,10 @@ import { NALU } from './util/nalu.js';
 import { H264Parser } from './parsers/h264.js';
 import { AACParser } from './parsers/aac.js';
 import { Event } from './util/event';
-import RemuxController, {TrackType} from './controller/remux.js';
+import RemuxController, {TrackType, VideoChunks} from './controller/remux.js';
 import BufferController from './controller/buffer.js';
 
-export type JMuxmerOptions = {
+export type MseMuxmerOptions = {
     node: HTMLVideoElement,
     mode: TrackType, // both, audio, video
     flushingTime: number,
@@ -22,19 +22,14 @@ export type MediaData = {
     duration?:number;
 };
 
-export class VideoChunks {
-    video:any[] = [];
-    audio:any[] = [];
-    [Key: string]: number[]
-}
 
-export class JMuxmer extends Event {
+export class MseMuxmer extends Event {
 
     static isSupported(codec:string) {
         return (MediaSource.isTypeSupported(codec));
     }
 
-    private readonly options: JMuxmerOptions;
+    private readonly options: MseMuxmerOptions;
     private readonly frameDuration:number;
     private node: HTMLVideoElement|null;
 
@@ -52,7 +47,7 @@ export class JMuxmer extends Event {
 
     private interval: any;
 
-    constructor(options:JMuxmerOptions) {
+    constructor(options:MseMuxmerOptions) {
         super('jmuxer');
 
         const defaults = {
@@ -255,7 +250,7 @@ export class JMuxmer extends Event {
                 continue;
             }
 
-            if (!JMuxmer.isSupported(`${type}/mp4; codecs="${track.mp4track.codec}"`)) {
+            if (!MseMuxmer.isSupported(`${type}/mp4; codecs="${track.mp4track.codec}"`)) {
                 debug.error('Browser does not support codec');
                 return false;
             }

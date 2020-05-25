@@ -4,13 +4,18 @@ import { AACRemuxer } from '../remuxer/aac.js';
 import { H264Remuxer } from '../remuxer/h264.js';
 import { appendByteArray, secToTime } from '../util/utils.js';
 import {Event} from '../util/event';
-import {VideoChunks} from "../jmuxer";
 import {BaseRemuxer} from "../remuxer/base";
 
 export enum TrackType {
     Both = 'both',
     Video = 'video',
     Audio = 'audio'
+}
+
+export class VideoChunks {
+    video:any[] = [];
+    audio:any[] = [];
+    [Key: string]: number[]
 }
 
 
