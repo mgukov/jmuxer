@@ -78,6 +78,7 @@ export class OpusParser extends AudioParser {
 
         this.track.codec = 'mp4a.40.' + objectType;
         this.track.channelCount = channelCount;
+        this.track.audiosamplerate = 24000;
         // this.track.config = config;
         this.remuxer.readyToDecode = true;
     }
