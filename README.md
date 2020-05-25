@@ -1,14 +1,6 @@
-[![Build Status](https://travis-ci.org/samirkumardas/jmuxer.svg?branch=master)](https://travis-ci.org/samirkumardas/jmuxer)
-![Maintenance](https://img.shields.io/maintenance/yes/2020.svg)
-![license](https://img.shields.io/github/license/mashape/apistatus.svg)
-
 mse_muxer
 -------
 mse_muxer - a simple javascript mp4 muxer for non-standard streaming communications protocol. Basically it does not care about communication protocol and it is simply a javscript mp4 remuxer intended to pay media file in the browser using media source extension. It expects raw H264 video data and AAC audio data in ADTS container as an input.
-
-What was the purpose of developing?
--------
-It was needed to play raw H264 and AAC data coming from live streaming encapsulated into a custom transport container in a project. Each chunk would contain its duration, audio data and video data with simple 4 bytes header. Please check example section to check packet format. After struggling several days with few open source projects like hls.js, I have eneded up to make a new one that would be more simpler and minimalist to achieve my goal.
 
 How to use?
 -------
@@ -128,8 +120,6 @@ A steps guideline to obtain above format from your file:
 1. Extracting h264 for all chunks: `for f in *.mp4; do ffmpeg -i "$f" -vcodec copy -an -bsf:v h264_mp4toannexb "${f:0:3}.h264"; done`
 1. Extracting audio for all chunks: `for f in *.mp4; do ffmpeg -i "$f" -acodec copy -vn "${f:0:3}.aac"; done`
 1. Extracting duration for all chunks: `for f in *.mp4; do ffprobe "$f" -show_format 2>&1 | sed -n 's/duration=//p'; done`
-
-(see https://github.com/samirkumardas/jmuxer/issues/20#issuecomment-470855007)
 
 **How to run example?**
 
