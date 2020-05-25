@@ -1,10 +1,11 @@
 import * as debug from '../util/debug';
 import { MP4 } from '../util/mp4-generator.js';
-import { AACRemuxer } from '../remuxer/aac.js';
 import { H264Remuxer } from '../remuxer/h264.js';
 import { appendByteArray, secToTime } from '../util/utils.js';
 import {Event} from '../util/event';
 import {BaseRemuxer} from "../remuxer/base";
+import {NALU} from "../util/nalu";
+import {AudioRemuxer} from "../remuxer/audio";
 
 export enum TrackType {
     Both = 'both',
@@ -12,10 +13,18 @@ export enum TrackType {
     Audio = 'audio'
 }
 
+export type MediaFrames = {
+    units: NALU[] | Uint8Array,
+    duration:number;
+};
+
 export class VideoChunks {
-    video:any[] = [];
-    audio:any[] = [];
-    [Key: string]: number[]
+    video:MediaFrames[] = [];
+    audio:MediaFrames[] = [];
+
+    get(type:TrackType) {
+        return type === TrackType.Video ? this.video : this.audio;
+    }
 }
 
 
@@ -38,8 +47,8 @@ export default class RemuxController extends Event {
             this.tracks.set(TrackType.Video, new H264Remuxer());
             this.trackTypes.push(TrackType.Video);
         }
-        if (type === 'audio' || type === TrackType.Both) {
-            this.tracks.set(TrackType.Audio, new AACRemuxer());
+        if (type === TrackType.Video || type === TrackType.Both) {
+            this.tracks.set(TrackType.Audio, new AudioRemuxer());
             this.trackTypes.push(TrackType.Audio);
         }
     }
@@ -114,7 +123,7 @@ export default class RemuxController extends Event {
     remux(data:VideoChunks) {
         for (let type of this.trackTypes) {
 
-            let samples = data[type];
+            let samples = data.get(type);
             if (type === 'audio') {
                 const track = this.tracks.get(type);
                 if (track && !track.readyToDecode) {

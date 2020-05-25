@@ -1,14 +1,15 @@
 import * as debug from '../util/debug';
-import {AACParser} from '../parsers/aac.js';
+import {AACParser, AudioParser} from '../parsers/aac.js';
 import {BaseRemuxer} from './base.js';
-import {TrackType} from "../controller/remux";
+import {MediaFrames, TrackType} from "../controller/remux";
+import {OpusParser} from "../parsers/opus";
 
-export class AACRemuxer extends BaseRemuxer {
+export class AudioRemuxer extends BaseRemuxer {
 
     nextDts = 0;
     timescale = 1000;
 
-    private readonly aac: AACParser;
+    private readonly parser: AudioParser;
 
     constructor() {
         super({
@@ -21,7 +22,7 @@ export class AACRemuxer extends BaseRemuxer {
             duration: 1000,
             samples: []
         });
-        this.aac = new AACParser(this);
+        this.parser = new OpusParser(this);
     }
 
     resetTrack() {
@@ -32,13 +33,13 @@ export class AACRemuxer extends BaseRemuxer {
         this.mp4track.timescale = this.timescale;
     }
 
-    remux(samples:any[]) {
+    remux(samples:MediaFrames[]) {
         let config,
             sample,
             size,
             payload;
         for (let sample of samples) {
-            payload = sample.units;
+            payload = sample.units as Uint8Array;
             size = payload.byteLength;
             this.samples.push({
                 units: payload,
@@ -47,7 +48,7 @@ export class AACRemuxer extends BaseRemuxer {
             });
             this.mp4track.len += size;
             if (!this.readyToDecode) {
-                this.aac.setAACConfig();
+                this.parser.setConfig();
             }
         }
     }

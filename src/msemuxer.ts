@@ -13,7 +13,8 @@ export type MseMuxmerOptions = {
     clearBuffer: boolean,
     onReady?: (() => void)|null, // function called when MSE is ready to accept frames
     fps: number,
-    debug: boolean
+    debug: boolean,
+    audioCodec?: string
 };
 
 export type MediaData = {
@@ -21,7 +22,6 @@ export type MediaData = {
     audio?:Uint8Array;
     duration?:number;
 };
-
 
 export class MseMuxmer extends Event {
 
@@ -133,15 +133,14 @@ export class MseMuxmer extends Event {
     }
 
     getVideoFrames(nalus:Uint8Array[], duration:number) {
-        let nalu,
-            units = [],
-            samples = [],
+        let units:NALU[] = [];
+        let samples = [],
             naluObj,
             sampleDuration = 0,
             adjustDuration = 0,
             numberOfFrames:number[] = [];
 
-        for (nalu of nalus) {
+        for (const nalu of nalus) {
             naluObj = new NALU(nalu);
             units.push(naluObj);
             if (naluObj.type() === NALU.IDR || naluObj.type() === NALU.NDR) {

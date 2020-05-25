@@ -1,7 +1,8 @@
 import * as debug from '../util/debug';
 import {H264Parser} from '../parsers/h264.js';
 import {BaseRemuxer} from './base.js';
-import {TrackType} from "../controller/remux";
+import {MediaFrames, TrackType} from "../controller/remux";
+import {NALU} from "../util/nalu";
 
 export class H264Remuxer extends BaseRemuxer {
 
@@ -30,7 +31,7 @@ export class H264Remuxer extends BaseRemuxer {
         this.mp4track.pps = '';
     }
 
-    remux(samples:any[]) {
+    remux(samples:MediaFrames[]) {
         let sample,
             units,
             unit,
@@ -40,7 +41,7 @@ export class H264Remuxer extends BaseRemuxer {
             units = [];
             size = 0;
             keyFrame = false;
-            for (unit of sample.units) {
+            for (unit of (sample.units as NALU[])) {
                 if (this.h264.parseNAL(unit)) {
                     units.push(unit);
                     size += unit.getSize();

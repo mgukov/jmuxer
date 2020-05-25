@@ -1,5 +1,5 @@
 import * as debug from '../util/debug';
-import {TrackType} from "../controller/remux";
+import {MediaFrames, TrackType} from "../controller/remux";
 
 let track_id = 1;
 
@@ -59,6 +59,6 @@ export class BaseRemuxer {
         return null;
     }
 
-    remux(samples:any[]) {
+    remux(samples:MediaFrames[]) {
     }
 }
