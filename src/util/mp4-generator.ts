@@ -1,4 +1,5 @@
 import {Track} from "../remuxer/base";
+import {TrackType} from "../controller/remux";
 
 /**
  * Generate MP4 Box
@@ -7,6 +8,7 @@ import {Track} from "../remuxer/base";
 
 export class MP4 {
 
+    static initialized = false;
     static types = {
         avc1: [], // codingname
         avcC: [],
@@ -44,11 +46,11 @@ export class MP4 {
         smhd: [],
     } as {[Key: string]: number[]};
 
-    static HDLR_TYPES: { video: Uint8Array, audio: Uint8Array }
+    static HDLR_TYPES: { video: Uint8Array, audio: Uint8Array };
 
     static STTS:Uint8Array;
     static STSC:Uint8Array;
-    static STCO:Uint8Array
+    static STCO:Uint8Array;
 
     static STSZ = new Uint8Array([
         0x00, // version
@@ -174,8 +176,8 @@ export class MP4 {
         return result;
     }
 
-    static hdlr(type:string) {
-        return MP4.box(MP4.types.hdlr, type === 'video' ? MP4.HDLR_TYPES.video : MP4.HDLR_TYPES.audio);
+    static hdlr(type:TrackType) {
+        return MP4.box(MP4.types.hdlr, type === TrackType.Video ? MP4.HDLR_TYPES.video : MP4.HDLR_TYPES.audio);
     }
 
     static mdat(data:Uint8Array) {
@@ -625,8 +627,9 @@ export class MP4 {
     }
 
     static initSegment(tracks:any, duration:number, timescale:number) {
-        if (!MP4.types) {
+        if (!MP4.initialized) {
             MP4.init();
+            MP4.initialized = true;
         }
         const movie = MP4.moov(tracks, duration, timescale);
         const result = new Uint8Array(MP4.FTYP.byteLength + movie.byteLength);
