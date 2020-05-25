@@ -5,6 +5,7 @@ import { AACParser } from './parsers/aac.js';
 import { Event } from './util/event';
 import RemuxController, {TrackType, VideoChunks} from './controller/remux.js';
 import BufferController from './controller/buffer.js';
+import {OpusParser} from "./parsers/opus";
 
 export type MseMuxmerOptions = {
     node: HTMLVideoElement,
@@ -119,7 +120,7 @@ export class MseMuxmer extends Event {
             }
         }
         if (data.audio) {
-            aacFrames = AACParser.extractAAC(data.audio);
+            aacFrames = OpusParser.extractOpus(data.audio);
             if (aacFrames.length > 0) {
                 chunks.audio = this.getAudioFrames(aacFrames, duration);
                 remux = true;

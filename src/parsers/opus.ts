@@ -27,8 +27,6 @@ export class OpusParser extends AudioParser {
     }
 
     static extractOpus(buffer:Uint8Array) {
-        return buffer;
-
         let i = 0,
           length = buffer.byteLength,
           headerLength,
