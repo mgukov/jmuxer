@@ -242,12 +242,10 @@ export class MseMuxmer extends Event {
         }
 
         this.bufferControllers.clear();
-        for (let t in this.remuxController.tracks.keys()) {
-            const type = t as TrackType;
-
-            let track = this.remuxController.tracks.get(type);
+        this.remuxController.tracks.forEach((value, type) => {
+            let track = this.remuxController!.tracks.get(type);
             if (!track) {
-                continue;
+                return;
             }
 
             if (!MseMuxmer.isSupported(`${type}/mp4; codecs="${track.mp4track.codec}"`)) {
@@ -264,7 +262,7 @@ export class MseMuxmer extends Event {
                     ctrl.on('error', this.onBufferError.bind(this));
                 }
             }
-        }
+        });
     }
 
     startInterval() {
