@@ -220,15 +220,10 @@ export class MseMuxmer extends Event {
             this.remuxController.destroy();
             this.remuxController = null;
         }
-
-        for (let type in this.bufferControllers) {
-            const ctrl = this.bufferControllers.get(type as TrackType);
-            if (ctrl) {
-                ctrl.destroy();
-            }
-        }
+        this.bufferControllers.forEach(ctrl => {
+            ctrl.destroy();
+        });
         this.bufferControllers.clear();
-
         this.node = null;
         this.mseReady = false;
         this.videoStarted = false;
@@ -281,12 +276,9 @@ export class MseMuxmer extends Event {
     }
 
     releaseBuffer() {
-        for (let type in this.bufferControllers) {
-            const ctrl = this.bufferControllers.get(type as TrackType);
-            if (ctrl) {
-                ctrl.doAppend();
-            }
-        }
+        this.bufferControllers.forEach(ctrl => {
+            ctrl.doAppend();
+        });
     }
 
     getSafeBufferClearLimit(offset:number) {
@@ -314,13 +306,10 @@ export class MseMuxmer extends Event {
 
     clearBuffer() {
         if (this.options.clearBuffer && (Date.now() - this.lastCleaningTime) > 10000) {
-            for (let type in this.bufferControllers) {
+            this.bufferControllers.forEach(ctrl => {
                 let cleanMaxLimit = this.getSafeBufferClearLimit(this.node!.currentTime);
-                const ctrl = this.bufferControllers.get(type as TrackType);
-                if (ctrl) {
-                    ctrl.initCleanup(cleanMaxLimit);
-                }
-            }
+                ctrl.initCleanup(cleanMaxLimit);
+            });
             this.lastCleaningTime = Date.now();
         }
     }
