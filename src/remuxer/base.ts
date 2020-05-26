@@ -32,14 +32,15 @@ export class BaseRemuxer {
     readyToDecode = false;
     samples:any[] = [];
     isHDAvail = false;
-    dts = 0;
+    dts:number;
 
     static getTrackID() {
         return track_id++;
     }
 
-    protected constructor(track: Track) {
+    protected constructor(track: Track, pts:number) {
         this.mp4track = track;
+        this.dts = pts;
     }
 
     flush() {
@@ -49,8 +50,7 @@ export class BaseRemuxer {
     }
 
     isReady() {
-        if (!this.readyToDecode || !this.samples.length) return null;
-        return true;
+        return this.readyToDecode && this.samples.length > 0;
     }
 
     resetTrack() {}
@@ -59,6 +59,8 @@ export class BaseRemuxer {
         return null;
     }
 
-    remux(samples:MediaFrames[]) {
+    remux(samples:MediaFrames[], pts?:number) {
     }
+
+
 }

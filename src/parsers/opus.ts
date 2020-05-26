@@ -2,7 +2,7 @@ import * as debug from '../util/debug';
 import {BaseRemuxer, Track} from "../remuxer/base";
 import {AudioParser} from "./aac";
 
-let opusHeader:Uint8Array;
+// let opusHeader:Uint8Array;
 
 export class OpusParser extends AudioParser {
 
@@ -11,15 +11,15 @@ export class OpusParser extends AudioParser {
     }
 
     static get getOpusHeaderData() {
-        return opusHeader;
+        return new Uint8Array(0);
     }
 
     static getHeaderLength(data:Uint8Array) {
-        return (data[1] & 0x01 ? 7 : 9);  // without CRC 7 and with CRC 9 Refs: https://wiki.multimedia.cx/index.php?title=ADTS
+        return 0;//(data[1] & 0x01 ? 7 : 9);  // without CRC 7 and with CRC 9 Refs: https://wiki.multimedia.cx/index.php?title=ADTS
     }
 
     static getFrameLength(data:Uint8Array) {
-        return ((data[3] & 0x03) << 11) | (data[4] << 3) | ((data[5] & 0xE0) >>> 5); // 13 bits length ref: https://wiki.multimedia.cx/index.php?title=ADTS
+        return data.byteLength;//((data[3] & 0x03) << 11) | (data[4] << 3) | ((data[5] & 0xE0) >>> 5); // 13 bits length ref: https://wiki.multimedia.cx/index.php?title=ADTS
     }
 
     static isOpusPattern (data:Uint8Array) {
@@ -27,10 +27,7 @@ export class OpusParser extends AudioParser {
     }
 
     static extractOpus(buffer:Uint8Array) {
-        let i = 0,
-          length = buffer.byteLength,
-          headerLength,
-          frameLength;
+        let i = 0;
 
         const result:Uint8Array[] = [];
 
@@ -38,13 +35,13 @@ export class OpusParser extends AudioParser {
             debug.error('Invalid ADTS audio format');
             return result;
         }
-        headerLength = OpusParser.getHeaderLength(buffer);
-        if (!opusHeader) {
-            opusHeader = buffer.subarray(0, headerLength);
-        }
+        const headerLength = OpusParser.getHeaderLength(buffer);
+        // if (!opusHeader) {
+        //     opusHeader = buffer.subarray(0, headerLength);
+        // }
 
-        while (i < length) {
-            frameLength = OpusParser.getFrameLength(buffer);
+        while (i < buffer.byteLength) {
+            const frameLength = OpusParser.getFrameLength(buffer);
             result.push(buffer.subarray(headerLength, frameLength));
             buffer = buffer.slice(frameLength);
             i += frameLength;
@@ -57,6 +54,8 @@ export class OpusParser extends AudioParser {
     }
 
     setConfig() {
+
+        debug.log('OpusParser: setConfig');
         // const headerData = OpusParser.getOpusHeaderData;
         // if (!headerData) return;
 
@@ -74,7 +73,7 @@ export class OpusParser extends AudioParser {
         // config[1] |= (sampleIndex & 0x01) << 7;
         // config[1] |= channelCount << 3;
 
-        this.track.codec = 'mp4a.40.' + objectType;
+        this.track.codec = 'opus';
         this.track.channelCount = channelCount;
         this.track.audiosamplerate = 24000;
         // this.track.config = config;

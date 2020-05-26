@@ -6,6 +6,8 @@ import {TrackType} from "../controller/remux";
  * taken from: https://github.com/dailymotion/hls.js
  */
 
+
+
 export class MP4 {
 
     static initialized = false;

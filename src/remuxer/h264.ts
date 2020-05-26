@@ -10,7 +10,9 @@ export class H264Remuxer extends BaseRemuxer {
     protected timescale = 1000;
     private h264: H264Parser;
 
-    constructor() {
+    private init = false;
+
+    constructor(pts:number) {
         super({
             id: BaseRemuxer.getTrackID(),
             type: TrackType.Video,
@@ -21,7 +23,8 @@ export class H264Remuxer extends BaseRemuxer {
             timescale: 1000,
             duration: 1000,
             samples: [],
-        });
+        }, pts);
+        this.nextDts = pts;
         this.h264 = new H264Parser(this);
     }
 
@@ -31,17 +34,20 @@ export class H264Remuxer extends BaseRemuxer {
         this.mp4track.pps = '';
     }
 
-    remux(samples:MediaFrames[]) {
-        let sample,
-            units,
-            unit,
-            size,
-            keyFrame;
-        for (sample of samples) {
-            units = [];
-            size = 0;
-            keyFrame = false;
-            for (unit of (sample.units as NALU[])) {
+    remux(samples:MediaFrames[], pts?:number) {
+        if (!this.init) {
+            this.init = true;
+            if (pts) {
+                this.nextDts = pts;
+                this.dts = pts;
+            }
+        }
+
+        for (const sample of samples) {
+            const units = [];
+            let size = 0;
+            let keyFrame = false;
+            for (const unit of (sample.units as NALU[])) {
                 if (this.h264.parseNAL(unit)) {
                     units.push(unit);
                     size += unit.getSize();
@@ -71,8 +77,6 @@ export class H264Remuxer extends BaseRemuxer {
         let payload = new Uint8Array(this.mp4track.len);
         let offset = 0;
         let samples = this.mp4track.samples;
-        let mp4Sample,
-            duration;
 
         this.dts = this.nextDts;
 
@@ -80,7 +84,7 @@ export class H264Remuxer extends BaseRemuxer {
             let sample = this.samples.shift(),
                 units = sample.units;
 
-            duration = sample.duration;
+            const duration = sample.duration;
 
             if (duration <= 0) {
                 debug.log(`remuxer: invalid sample duration at DTS: ${this.nextDts} :${duration}`);
@@ -89,7 +93,7 @@ export class H264Remuxer extends BaseRemuxer {
             }
 
             this.nextDts += duration;
-            mp4Sample = {
+            const mp4Sample = {
                 size: sample.size,
                 duration: duration,
                 cts: 0,

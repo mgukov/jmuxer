@@ -11,7 +11,7 @@ export class AudioRemuxer extends BaseRemuxer {
 
     private readonly parser: AudioParser;
 
-    constructor() {
+    constructor(pts:number) {
         super({
             id: BaseRemuxer.getTrackID(),
             type: TrackType.Audio,
@@ -21,7 +21,8 @@ export class AudioRemuxer extends BaseRemuxer {
             timescale: 1000,
             duration: 1000,
             samples: []
-        });
+        }, pts);
+        this.nextDts = pts;
         this.parser = new OpusParser(this);
     }
 
@@ -33,14 +34,10 @@ export class AudioRemuxer extends BaseRemuxer {
         this.mp4track.timescale = this.timescale;
     }
 
-    remux(samples:MediaFrames[]) {
-        let config,
-            sample,
-            size,
-            payload;
+    remux(samples:MediaFrames[], pts?:number) {
         for (let sample of samples) {
-            payload = sample.units as Uint8Array;
-            size = payload.byteLength;
+            const payload = sample.units as Uint8Array;
+            const size = payload.byteLength;
             this.samples.push({
                 units: payload,
                 size: size,
