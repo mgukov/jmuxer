@@ -224,12 +224,10 @@ export class MP4 {
      * @param tracks... (optional) {array} the tracks associated with this movie
      */
     private static moov(tracks:Track[], duration:number, timescale:number) {
-        let i = tracks.length;
         const boxes:Uint8Array[] = [];
-
-        while (i--) {
-            boxes[i] = MP4.trak(tracks[i]);
-        }
+        tracks.forEach(track => {
+            boxes.push(MP4.trak(track));
+        });
         return MP4.box( MP4.types.moov, ...[MP4.mvhd(timescale, duration)].concat(boxes).concat(MP4.mvex(tracks)));
     }
 
@@ -316,37 +314,38 @@ export class MP4 {
         let sps:number[] = [];
         let pps:number[] = [];
 
-        let i,
-            data,
-            len;
+        const spsLen = track.sps?.length ?? 0;
+        const ppsLen = track.pps?.length ?? 0;
+
         // assemble the SPSs
-
-        for (i = 0; i < track.sps.length; i++) {
-            data = track.sps[i];
-            len = data.byteLength;
-            sps.push((len >>> 8) & 0xFF);
-            sps.push((len & 0xFF));
-            sps = sps.concat(Array.prototype.slice.call(data)); // SPS
+        if (track.sps) {
+            for (let i = 0; i < track.sps.length; i++) {
+                const data = track.sps[i];
+                const len = data.byteLength;
+                sps.push((len >>> 8) & 0xFF);
+                sps.push((len & 0xFF));
+                sps = sps.concat(Array.prototype.slice.call(data)); // SPS
+            }
         }
-
         // assemble the PPSs
-        for (i = 0; i < track.pps.length; i++) {
-            data = track.pps[i];
-            len = data.byteLength;
-            pps.push((len >>> 8) & 0xFF);
-            pps.push((len & 0xFF));
-            pps = pps.concat(Array.prototype.slice.call(data));
+        if (track.pps) {
+            for (let i = 0; i < track.pps.length; i++) {
+                const data = track.pps[i];
+                const len = data.byteLength;
+                pps.push((len >>> 8) & 0xFF);
+                pps.push((len & 0xFF));
+                pps = pps.concat(Array.prototype.slice.call(data));
+            }
         }
-
         var avcc = MP4.box(MP4.types.avcC, new Uint8Array([
                 0x01,   // version
                 sps[3], // profile
                 sps[4], // profile compat
                 sps[5], // level
                 0xfc | 3, // lengthSizeMinusOne, hard-coded to 4 bytes
-                0xE0 | track.sps.length, // 3bit reserved (111) + numOfSequenceParameterSets
+                0xE0 | spsLen, // 3bit reserved (111) + numOfSequenceParameterSets
             ].concat(sps).concat([
-                track.pps.length, // numOfPictureParameterSets
+              ppsLen, // numOfPictureParameterSets
             ]).concat(pps))), // "PPS"
             width = track.width!,
             height = track.height!;
@@ -548,16 +547,12 @@ export class MP4 {
     }
 
     private static trun(track:Track, offset:number) {
-        let samples = track.samples || [],
-            len = samples.length,
-            arraylen = 12 + (16 * len),
-            array = new Uint8Array(arraylen),
-            i,
-            sample,
-            duration,
-            size,
-            flags,
-            cts;
+
+        const samples = track.samples;
+        const len = samples.length;
+        const arraylen = 12 + (16 * len);
+        const array = new Uint8Array(arraylen);
+
         offset += 8 + arraylen;
         array.set([
             0x00, // version 0
@@ -571,12 +566,13 @@ export class MP4 {
             (offset >>> 8) & 0xFF,
             offset & 0xFF, // data_offset
         ], 0);
-        for (i = 0; i < len; i++) {
-            sample = samples[i];
-            duration = sample.duration;
-            size = sample.size;
-            flags = sample.flags;
-            cts = sample.cts;
+
+        for (let i = 0; i < len; i++) {
+            const sample = samples[i];
+            const duration = sample.duration;
+            const size = sample.size;
+            const flags = sample.flags;
+            const cts = sample.cts;
             array.set([
                 (duration >>> 24) & 0xFF,
                 (duration >>> 16) & 0xFF,

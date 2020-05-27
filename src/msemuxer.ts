@@ -131,14 +131,11 @@ export class MseMuxmer extends Event {
 
     private getVideoFrames(nalus:Uint8Array[], duration:number) {
         let units:NALU[] = [];
-        let samples = [],
-            naluObj,
-            sampleDuration = 0,
-            adjustDuration = 0,
-            numberOfFrames:number[] = [];
+        const samples:{units:NALU[], duration:number}[] = [];
 
+        let numberOfFrames:number[] = [];
         for (const nalu of nalus) {
-            naluObj = new NALU(nalu);
+            const naluObj = new NALU(nalu);
             units.push(naluObj);
             if (naluObj.type() === NALU.IDR || naluObj.type() === NALU.NDR) {
                 samples.push({units, duration: 0});
@@ -151,6 +148,9 @@ export class MseMuxmer extends Event {
                 }
             }
         }
+
+        let sampleDuration = 0,
+          adjustDuration = 0;
 
         if (duration > 0) {
             sampleDuration = duration / samples.length;

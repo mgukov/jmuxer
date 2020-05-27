@@ -1,6 +1,6 @@
 import * as debug from '../util/debug';
 import {AACParser, AudioParser} from '../parsers/aac.js';
-import {BaseRemuxer} from './base.js';
+import {BaseRemuxer, Mp4Sample} from './base.js';
 import {MediaFrames, TrackType} from "../controller/remux";
 import {OpusParser} from "../parsers/opus";
 
@@ -58,17 +58,12 @@ export class AudioRemuxer extends BaseRemuxer {
         let payload = new Uint8Array(this.mp4track.len);
         let offset = 0;
         let samples = this.mp4track.samples;
-        let mp4Sample,
-            duration;
 
         this.dts = this.nextDts;
 
         while (this.samples.length) {
-            let sample = this.samples.shift(),
-                units = sample.units;
-
-            duration = sample.duration;
-
+            const sample = this.samples.shift(), units = sample.units;
+            const duration = sample.duration;
             if (duration <= 0) {
                 debug.log(`remuxer: invalid sample duration at DTS: ${this.nextDts} :${duration}`);
                 this.mp4track.len -= sample.size;
@@ -76,11 +71,14 @@ export class AudioRemuxer extends BaseRemuxer {
             }
 
             this.nextDts += duration;
-            mp4Sample = {
+            const mp4Sample:Mp4Sample = {
                 size: sample.size,
                 duration: duration,
                 cts: 0,
                 flags: {
+                    paddingValue:0,
+                    isNonSync:0,
+
                     isLeading: 0,
                     isDependedOn: 0,
                     hasRedundancy: 0,

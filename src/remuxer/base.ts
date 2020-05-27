@@ -1,21 +1,34 @@
-import * as debug from '../util/debug';
 import {MediaFrames, TrackType} from "../controller/remux";
 
 let track_id = 1;
 
+export type Mp4Sample = {
+    size: number,
+    duration: number,
+    cts: number,
+    flags: {
+        isLeading: number,
+        isDependedOn: number,
+        hasRedundancy: number,
+        degradPrio: number,
+        isNonSync: number,
+        dependsOn: number,
+        paddingValue: number
+    }
+};
 
 export type Track = {
     id: number;
     type: TrackType.Video|TrackType.Audio;
     len: number;
     fragmented: boolean;
-    sps?: any;
-    pps?: any;
+    sps?: Uint8Array[];
+    pps?: Uint8Array[];
     width?: number;
     height?: number;
     timescale: number;
     duration: number;
-    samples:any[];
+    samples:Mp4Sample[];
 
     codec?: string;
     channelCount?: number;
