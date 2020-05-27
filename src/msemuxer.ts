@@ -104,7 +104,8 @@ export class MseMuxmer extends Event {
         let remux = false,
             chunks = new MediaChunks();
 
-        chunks.pts = data.pts;
+        // chunks.pts = data.pts;
+
         if (!data || !this.remuxController) return;
 
         const duration = data.duration ?? 0;
