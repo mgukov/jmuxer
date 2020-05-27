@@ -13,7 +13,7 @@ export type MseMuxmerOptions = {
     flushingTime?: number,
     clearBuffer?: boolean,
     onReady?: (() => void)|null, // function called when MSE is ready to accept frames
-    fps: number,
+    fps?: number,
     debug: boolean,
     audioCodec?: string
 };
@@ -69,7 +69,7 @@ export class MseMuxmer extends Event {
         }
 
         if (!this.options.fps) {
-            this.options.fps = 30;
+            this.options.fps = MseMuxmer.defaultsOptions.fps;
         }
         this.frameDuration = (1000 / this.options.fps) | 0;
         this.node = this.options.node;
@@ -117,9 +117,9 @@ export class MseMuxmer extends Event {
             }
         }
         if (data.audio) {
-            const aacFrames = OpusParser.extractOpus(data.audio);
-            if (aacFrames.length > 0) {
-                chunks.audio = this.getAudioFrames(aacFrames, duration);
+            const audioFrames = OpusParser.extractOpus(data.audio);
+            if (audioFrames.length > 0) {
+                chunks.audio = this.getAudioFrames(audioFrames, duration);
                 remux = true;
             }
         }
