@@ -47,7 +47,7 @@ export class H264Remuxer extends BaseRemuxer {
     }
 
     for (const sample of samples) {
-      const units = [];
+      const units:NALU[] = [];
       let size = 0;
       let keyFrame = false;
       for (const unit of (sample.units as NALU[])) {
@@ -84,11 +84,13 @@ export class H264Remuxer extends BaseRemuxer {
     this.dts = this.nextDts;
 
     while (this.samples.length) {
-      let sample = this.samples.shift(),
-        units = sample.units;
+      const sample = this.samples.shift();
+      if (!sample) {
+        break;
+      }
 
+      const units = sample.units;
       const duration = sample.duration;
-
       if (duration <= 0) {
         debug.log(`remuxer: invalid sample duration at DTS: ${this.nextDts} :${duration}`);
         this.mp4track.len -= sample.size;
@@ -112,7 +114,7 @@ export class H264Remuxer extends BaseRemuxer {
         },
       };
 
-      for (const unit of units) {
+      for (const unit of (units as NALU[])) {
         payload.set(unit.getData(), offset);
         offset += unit.getSize();
       }

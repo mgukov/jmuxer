@@ -282,15 +282,12 @@ export class MP4 {
     }
 
     private static sdtp(track:Track) {
-        var
-            samples = track.samples || [],
-            bytes = new Uint8Array(4 + samples.length),
-            flags,
-            i;
+        const samples = track.samples;
+        const bytes = new Uint8Array(4 + samples.length);
         // leave the full box header (4 bytes) all zero
         // write the sample table
-        for (i = 0; i < samples.length; i++) {
-            flags = samples[i].flags;
+        for (let i = 0; i < samples.length; i++) {
+            const flags = samples[i].flags;
             bytes[i + 4] = (flags.dependsOn << 4) |
                 (flags.isDependedOn << 2) |
                 (flags.hasRedundancy);

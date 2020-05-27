@@ -3,7 +3,7 @@ import { NALU } from './util/nalu.js';
 import { H264Parser } from './parsers/h264.js';
 import { AACParser } from './parsers/aac.js';
 import { Event } from './util/event';
-import RemuxController, {TrackType, MediaChunks} from './controller/remux.js';
+import RemuxController, {TrackType, MediaChunks, MediaFrames} from './controller/remux.js';
 import BufferController from './controller/buffer.js';
 import {OpusParser} from "./parsers/opus";
 
@@ -105,8 +105,8 @@ export class MseMuxmer extends Event {
             chunks = new MediaChunks();
 
         chunks.pts = data.pts;
-
         if (!data || !this.remuxController) return;
+
         const duration = data.duration ?? 0;
         if (data.video) {
             const nalus = H264Parser.extractNALu(data.video);
@@ -131,7 +131,7 @@ export class MseMuxmer extends Event {
 
     private getVideoFrames(nalus:Uint8Array[], duration:number) {
         let units:NALU[] = [];
-        const samples:{units:NALU[], duration:number}[] = [];
+        const samples:MediaFrames[] = [];
 
         let numberOfFrames:number[] = [];
         for (const nalu of nalus) {
@@ -175,13 +175,14 @@ export class MseMuxmer extends Event {
         return samples;
     }
 
-    private getAudioFrames(aacFrames:Uint8Array[], duration:number) {
-        let samples = [],
-            units,
+    private getAudioFrames(frames:Uint8Array[], duration:number) {
+        let samples:MediaFrames[] = [];
+
+        let units,
             sampleDuration = 0,
             adjustDuration = 0;
 
-        for (units of aacFrames) {
+        for (units of frames) {
             samples.push({units, duration:0});
         }
 

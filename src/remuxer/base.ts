@@ -1,6 +1,15 @@
 import {MediaFrames, TrackType} from "../controller/remux";
+import {NALU} from "../util/nalu";
 
 let track_id = 1;
+
+export type Sample = {
+    units: NALU[]|Uint8Array,
+    size: number,
+    keyFrame: boolean,
+    duration: number,
+
+};
 
 export type Mp4Sample = {
     size: number,
@@ -37,13 +46,11 @@ export type Track = {
     audiosamplerate?:number;
 };
 
-
 export class BaseRemuxer {
-
     seq = 1;
     readonly mp4track: Track;
     readyToDecode = false;
-    samples:any[] = [];
+    samples:Sample[] = [];
     isHDAvail = false;
     dts:number;
 

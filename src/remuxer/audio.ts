@@ -42,6 +42,7 @@ export class AudioRemuxer extends BaseRemuxer {
                 units: payload,
                 size: size,
                 duration: sample.duration,
+                keyFrame: false
             });
             this.mp4track.len += size;
             if (!this.readyToDecode) {
@@ -62,7 +63,12 @@ export class AudioRemuxer extends BaseRemuxer {
         this.dts = this.nextDts;
 
         while (this.samples.length) {
-            const sample = this.samples.shift(), units = sample.units;
+            const sample = this.samples.shift();
+            if (!sample) {
+                break;
+            }
+
+            const units = sample.units;
             const duration = sample.duration;
             if (duration <= 0) {
                 debug.log(`remuxer: invalid sample duration at DTS: ${this.nextDts} :${duration}`);
@@ -87,7 +93,7 @@ export class AudioRemuxer extends BaseRemuxer {
                 },
             };
 
-            payload.set(sample.units, offset);
+            payload.set((sample.units as Uint8Array), offset);
             offset += sample.size;
             samples.push(mp4Sample);
         }
