@@ -41,7 +41,6 @@ export class MseMuxmer extends Event {
         debug: false
     };
 
-
     private readonly options: MseMuxmerOptions;
     private readonly frameDuration:number;
     private node: HTMLMediaElement|null;
@@ -375,7 +374,11 @@ export class MseMuxmer extends Event {
         }
     }
 
-    dts(type: TrackType) {
+    getDts(type: TrackType) {
         return this.remuxController?.muxers.get(type)?.dts ?? 0;
+    }
+
+    getElement() {
+        return this.options.node;
     }
 }
