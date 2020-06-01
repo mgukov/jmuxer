@@ -32,12 +32,12 @@ export class MseMuxmer extends Event {
     }
 
     private static defaultsOptions = {
-        node: '',
-        mode: 'both', // both, audio, video
-        flushingTime: 1500,
+        node: null,
+        mode: 'video', // both, audio, video
+        flushingTime: 300,
         clearBuffer: true,
         onReady: null, // function called when MSE is ready to accept frames
-        fps: 30,
+        fps: 15,
         debug: false
     };
 
@@ -252,7 +252,9 @@ export class MseMuxmer extends Event {
             }
 
             if (this.mediaSource) {
-                let sb = this.mediaSource.addSourceBuffer(`${type}/mp4; codecs="${track.mp4track.codec}"`);
+                const srcType = `${type}/mp4; codecs="${track.mp4track.codec}"`
+                debug.log('Add source type: ' + srcType);
+                let sb = this.mediaSource.addSourceBuffer(srcType);
                 this.bufferControllers.set(type, new BufferController(sb, type));
                 this.sourceBuffers.set(type, sb);
                 const ctrl = this.bufferControllers.get(type);
