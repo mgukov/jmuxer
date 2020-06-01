@@ -8,7 +8,7 @@ import BufferController from './controller/buffer.js';
 import {OpusParser} from "./parsers/opus";
 
 export type MseMuxmerOptions = {
-    node: HTMLMediaElement,
+    node?: HTMLMediaElement,
     mode: TrackType, // both, audio, video
     flushingTime?: number,
     clearBuffer?: boolean,
@@ -43,7 +43,7 @@ export class MseMuxmer extends Event {
 
     private readonly options: MseMuxmerOptions;
     private readonly frameDuration:number;
-    private node: HTMLMediaElement|null;
+    private node: HTMLMediaElement|null = null;
 
     private readonly sourceBuffers = new Map<TrackType, SourceBuffer>();
     private remuxController:RemuxController|null = null;
@@ -71,7 +71,7 @@ export class MseMuxmer extends Event {
             this.options.fps = MseMuxmer.defaultsOptions.fps;
         }
         this.frameDuration = (1000 / this.options.fps) | 0;
-        this.node = this.options.node;
+        // this.node = this.options.node;
 
         const isMSESupported = !!window.MediaSource;
         if (!isMSESupported) {
@@ -90,9 +90,9 @@ export class MseMuxmer extends Event {
 
     private setupMSE() {
         this.mediaSource = new MediaSource();
-        if (this.node) {
-            this.node.src = URL.createObjectURL(this.mediaSource);
-        }
+        // if (this.node) {
+        //     this.node.src = URL.createObjectURL(this.mediaSource);
+        // }
         this.mediaSource.addEventListener('sourceopen', this.onMSEOpen.bind(this));
         this.mediaSource.addEventListener('sourceclose', this.onMSEClose.bind(this));
         this.mediaSource.addEventListener('webkitsourceopen', this.onMSEOpen.bind(this));
@@ -221,6 +221,9 @@ export class MseMuxmer extends Event {
             ctrl.destroy();
         });
         this.bufferControllers.clear();
+        if (this.node) {
+            this.node.src = '';
+        }
         this.node = null;
         this.mseReady = false;
         this.videoStarted = false;
@@ -314,7 +317,7 @@ export class MseMuxmer extends Event {
     private clearBuffer() {
         if (this.options.clearBuffer && (Date.now() - this.lastCleaningTime) > 10000) {
             this.bufferControllers.forEach(ctrl => {
-                let cleanMaxLimit = this.getSafeBufferClearLimit(this.node!.currentTime);
+                let cleanMaxLimit = this.getSafeBufferClearLimit(this.node?.currentTime ?? 0);
                 ctrl.initCleanup(cleanMaxLimit);
             });
             this.lastCleaningTime = Date.now();
@@ -382,5 +385,19 @@ export class MseMuxmer extends Event {
 
     getElement() {
         return this.options.node;
+    }
+
+    connectTo(node:HTMLMediaElement) {
+        this.node = node;
+        if (node) {
+            node.src = URL.createObjectURL(this.mediaSource);
+        }
+    }
+
+    disconnect() {
+        if (this.node) {
+            this.node.src = '';
+        }
+        this.node = null;
     }
 }
