@@ -315,7 +315,7 @@ export class MseMuxmer extends Event {
     }
 
     private clearBuffer() {
-        if (this.options.clearBuffer && (Date.now() - this.lastCleaningTime) > 10000) {
+        if (this.options.clearBuffer && (Date.now() - this.lastCleaningTime) > 10000 && this.node) {
             this.bufferControllers.forEach(ctrl => {
                 let cleanMaxLimit = this.getSafeBufferClearLimit(this.node?.currentTime ?? 0);
                 ctrl.initCleanup(cleanMaxLimit);
@@ -387,14 +387,14 @@ export class MseMuxmer extends Event {
         return this.options.node;
     }
 
-    connectTo(node:HTMLMediaElement) {
+    connectNode(node:HTMLMediaElement) {
         this.node = node;
         if (node) {
             node.src = URL.createObjectURL(this.mediaSource);
         }
     }
 
-    disconnect() {
+    disconnectAll() {
         if (this.node) {
             this.node.src = '';
         }
