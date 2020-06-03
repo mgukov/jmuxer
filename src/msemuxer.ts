@@ -27,6 +27,10 @@ export type MediaData = {
 
 export class MseMuxmer extends Event {
 
+    static isMseSupported() {
+        return !!window.MediaSource;
+    }
+
     static isSupported(codec:string) {
         return (MediaSource.isTypeSupported(codec));
     }
@@ -61,8 +65,7 @@ export class MseMuxmer extends Event {
     constructor(options:MseMuxmerOptions) {
         super('mse_muxer');
 
-        const isMSESupported = !!window.MediaSource;
-        if (!isMSESupported) {
+        if (!MseMuxmer.isMseSupported()) {
             throw 'Oops! Browser does not support media source extension.';
         }
 
