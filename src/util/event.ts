@@ -33,12 +33,11 @@ export class Event {
         this.listener.clear();
     }
 
-    dispatch(event:string, data:any = undefined) {
-
+    dispatch(event:string, data?:any) {
         const listeners = this.listener.get(event);
         if (listeners) {
-            listeners.map((each) => {
-                each.apply(null, [data]);
+            listeners.forEach(listener => {
+                listener(data);
             });
             return true;
         }

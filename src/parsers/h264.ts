@@ -1,5 +1,5 @@
-import { ExpGolomb } from '../util/exp-golomb.js';
-import { NALU } from '../util/nalu.js';
+import { ExpGolomb } from '../util/exp-golomb';
+import { NALU } from '../util/nalu';
 import * as debug from '../util/debug';
 import {BaseRemuxer} from "../remuxer/base";
 

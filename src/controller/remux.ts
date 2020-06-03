@@ -1,7 +1,7 @@
 import * as debug from '../util/debug';
-import { MP4 } from '../util/mp4-generator.js';
-import { H264Remuxer } from '../remuxer/h264.js';
-import { appendByteArray, secToTime } from '../util/utils.js';
+import { MP4 } from '../util/mp4-generator';
+import { H264Remuxer } from '../remuxer/h264';
+import {Utils} from '../util/utils';
 import {Event} from '../util/event';
 import {BaseRemuxer} from "../remuxer/base";
 import {NALU} from "../util/nalu";
@@ -33,9 +33,7 @@ export default class RemuxController extends Event {
 
     private initialized = false;
     private trackTypes:TrackType[] = [];
-    // private tracks = {};
-    private mediaDuration:number;
-
+    private readonly mediaDuration:number;
     readonly muxers = new Map<TrackType, BaseRemuxer>();
 
     constructor(streaming:boolean) {
@@ -94,14 +92,14 @@ export default class RemuxController extends Event {
                     if (pay && pay.byteLength) {
                         const moof = MP4.moof(muxer.seq, muxer.dts, muxer.mp4track);
                         const mdat = MP4.mdat(pay);
-                        let payload = appendByteArray(moof, mdat);
+                        let payload = Utils.appendByteArray(moof, mdat);
                         let data = {
                             type: type,
                             payload: payload,
                             dts: muxer.dts
                         };
                         this.dispatch('buffer', data);
-                        let duration = secToTime(muxer.dts / 1000);
+                        let duration = Utils.secToTime(muxer.dts / 1000);
                         debug.log(`put segment (${type}): ${muxer.seq} dts: ${muxer.dts} samples: ${muxer.mp4track.samples.length} second: ${duration}`);
                         muxer.flush();
                     }
@@ -112,7 +110,6 @@ export default class RemuxController extends Event {
 
     isReady() {
         for (const type of this.trackTypes) {
-
             const muxer = this.muxers.get(type);
             if (muxer && !muxer.isReady()) {
                 return false;

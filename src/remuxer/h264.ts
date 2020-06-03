@@ -1,6 +1,6 @@
 import * as debug from '../util/debug';
-import {H264Parser} from '../parsers/h264.js';
-import {BaseRemuxer, Mp4Sample} from './base.js';
+import {H264Parser} from '../parsers/h264';
+import {BaseRemuxer, Mp4Sample} from './base';
 import {MediaFrames, TrackType} from "../controller/remux";
 import {NALU} from "../util/nalu";
 

@@ -1,10 +1,10 @@
 import * as debug from './util/debug';
-import { NALU } from './util/nalu.js';
-import { H264Parser } from './parsers/h264.js';
-import { AACParser } from './parsers/aac.js';
+import { NALU } from './util/nalu';
+import { H264Parser } from './parsers/h264';
+import { AACParser } from './parsers/aac';
 import { Event } from './util/event';
-import RemuxController, {TrackType, MediaChunks, MediaFrames} from './controller/remux.js';
-import BufferController from './controller/buffer.js';
+import RemuxController, {TrackType, MediaChunks, MediaFrames} from './controller/remux';
+import BufferController from './controller/buffer';
 import {OpusParser} from "./parsers/opus";
 
 export type MseMuxmerOptions = {
@@ -45,22 +45,26 @@ export class MseMuxmer extends Event {
     private readonly frameDuration:number;
     private node: HTMLMediaElement|null = null;
 
-    private readonly sourceBuffers = new Map<TrackType, SourceBuffer>();
-    private remuxController:RemuxController|null = null;
+    private readonly bufferControllers = new Map<TrackType, BufferController>();
+    private readonly remuxController:RemuxController;
+    private readonly mediaSource: MediaSource;
+
+    private keyframeCache:number[] = [];
+
     private mseReady = false;
     private lastCleaningTime = Date.now();
-    private keyframeCache:number[] = [];
     private frameCounter = 0;
-
-    private mediaSource: MediaSource|null = null;
     private videoStarted = false;
-    private readonly bufferControllers = new Map<TrackType, BufferController>();
     private bufferStarted = false;
-
     private interval: any;
 
     constructor(options:MseMuxmerOptions) {
         super('mse_muxer');
+
+        const isMSESupported = !!window.MediaSource;
+        if (!isMSESupported) {
+            throw 'Oops! Browser does not support media source extension.';
+        }
 
         this.options = Object.assign({}, MseMuxmer.defaultsOptions, options);
         if (this.options.debug) {
@@ -70,26 +74,23 @@ export class MseMuxmer extends Event {
         if (!this.options.fps) {
             this.options.fps = MseMuxmer.defaultsOptions.fps;
         }
-        this.frameDuration = (1000 / this.options.fps) | 0;
+        this.frameDuration = 1000 / this.options.fps;
         // this.node = this.options.node;
 
-        const isMSESupported = !!window.MediaSource;
-        if (!isMSESupported) {
-            throw 'Oops! Browser does not support media source extension.';
-        }
-
+        this.mediaSource = new MediaSource();
         this.setupMSE();
+
         this.remuxController = new RemuxController(this.options.clearBuffer ?? MseMuxmer.defaultsOptions.clearBuffer);
         this.remuxController.addTrack(this.options.mode);
 
         /* events callback */
         this.remuxController.on('buffer', this.onBuffer.bind(this));
-        this.remuxController.on('ready', this.createBuffer.bind(this));
+        this.remuxController.on('ready', this.createBuffers.bind(this));
         this.startInterval();
     }
 
     private setupMSE() {
-        this.mediaSource = new MediaSource();
+
         // if (this.node) {
         //     this.node.src = URL.createObjectURL(this.mediaSource);
         // }
@@ -97,36 +98,6 @@ export class MseMuxmer extends Event {
         this.mediaSource.addEventListener('sourceclose', this.onMSEClose.bind(this));
         this.mediaSource.addEventListener('webkitsourceopen', this.onMSEOpen.bind(this));
         this.mediaSource.addEventListener('webkitsourceclose', this.onMSEClose.bind(this));
-    }
-
-    feed(data: MediaData) {
-        let remux = false,
-            chunks = new MediaChunks();
-
-        // chunks.pts = data.pts;
-
-        if (!data || !this.remuxController) return;
-
-        const duration = data.duration ?? 0;
-        if (data.video) {
-            const nalus = H264Parser.extractNALu(data.video);
-            if (nalus.length > 0) {
-                chunks.video = this.getVideoFrames(nalus, duration);
-                remux = true;
-            }
-        }
-        if (data.audio) {
-            const audioFrames = OpusParser.extractOpus(data.audio);
-            if (audioFrames.length > 0) {
-                chunks.audio = this.getAudioFrames(audioFrames, duration);
-                remux = true;
-            }
-        }
-        if (!remux) {
-            debug.error('Input object must have video and/or audio property. Make sure it is not empty and valid typed array');
-            return;
-        }
-        this.remuxController.remux(chunks);
     }
 
     private getVideoFrames(nalus:Uint8Array[], duration:number) {
@@ -201,73 +172,37 @@ export class MseMuxmer extends Event {
         return samples;
     }
 
-    destroy() {
-        this.stopInterval();
-        if (this.mediaSource) {
-            try {
-                if (this.bufferControllers) {
-                    this.mediaSource.endOfStream();
-                }
-            } catch (e) {
-                debug.error(`mediasource is not available to end ${e.message}`);
-            }
-            this.mediaSource = null;
-        }
-        if (this.remuxController) {
-            this.remuxController.destroy();
-            this.remuxController = null;
-        }
-        this.bufferControllers.forEach(ctrl => {
-            ctrl.destroy();
-        });
-        this.bufferControllers.clear();
-        if (this.node) {
-            this.node.src = '';
-        }
-        this.node = null;
-        this.mseReady = false;
-        this.videoStarted = false;
-        this.bufferStarted = false;
-    }
+    private createBuffers() {
 
-    private createBuffer() {
-
-        debug.log('MseMuxmer::createBuffer 0');
-
-        if (!this.mseReady || !this.remuxController || !this.remuxController.isReady() || this.bufferStarted) {
+        if (!this.mseReady || !this.remuxController.isReady() || this.bufferStarted) {
             return;
         }
 
-        debug.log('MseMuxmer::createBuffer 1');
-
         this.bufferControllers.clear();
         this.remuxController.muxers.forEach((value, type) => {
-            let track = this.remuxController!.muxers.get(type);
+
+            let track = this.remuxController.muxers.get(type);
             if (!track) {
+                debug.log('track not found for type ' + type);
                 return;
             }
 
-            debug.log('MseMuxmer::createBuffer ' + type);
-
-            if (!MseMuxmer.isSupported(`${type}/mp4; codecs="${track.mp4track.codec}"`)) {
-                debug.error('Browser does not support codec');
-                return false;
+            const srcType = `${type}/mp4; codecs="${track.mp4track.codec}"`
+            debug.log('MseMuxmer::createBuffers ' + type);
+            if (!MseMuxmer.isSupported(srcType)) {
+                debug.error('Browser does not support codec: ' + srcType);
+                return;
             }
 
-            if (this.mediaSource) {
-                const srcType = `${type}/mp4; codecs="${track.mp4track.codec}"`
-                debug.log('Add source type: ' + srcType);
-                let sb = this.mediaSource.addSourceBuffer(srcType);
-                this.bufferControllers.set(type, new BufferController(sb, type));
-                this.sourceBuffers.set(type, sb);
-                const ctrl = this.bufferControllers.get(type);
-                if (ctrl) {
-                    ctrl.on('error', this.onBufferError.bind(this));
-                }
-            }
+            debug.log('Add source type: ' + srcType);
+            let sb = this.mediaSource.addSourceBuffer(srcType);
+            let bufferController = new BufferController(sb, type);
+            this.bufferControllers.set(type, bufferController);
+            bufferController.on('error', err => this.onBufferError(err));
         });
 
         this.bufferStarted = true;
+        debug.log('MseMuxer buffer created');
     }
 
     private startInterval() {
@@ -315,9 +250,13 @@ export class MseMuxmer extends Event {
     }
 
     private clearBuffer() {
-        if (this.options.clearBuffer && (Date.now() - this.lastCleaningTime) > 10000 && this.node) {
+        if (this.options.clearBuffer && (Date.now() - this.lastCleaningTime) > 10000) {
             this.bufferControllers.forEach(ctrl => {
                 let cleanMaxLimit = this.getSafeBufferClearLimit(this.node?.currentTime ?? 0);
+
+                const state = this.mediaSource.readyState;
+                const buffers = this.mediaSource.sourceBuffers;
+
                 ctrl.initCleanup(cleanMaxLimit);
             });
             this.lastCleaningTime = Date.now();
@@ -328,6 +267,8 @@ export class MseMuxmer extends Event {
         const ctrl = this.bufferControllers.get(data.type);
         if (ctrl) {
             ctrl.feed(data.payload);
+        } else {
+            debug.log('buffer not found');
         }
     }
 
@@ -337,9 +278,9 @@ export class MseMuxmer extends Event {
         this.mseReady = true;
         if (typeof this.options.onReady === 'function') {
             this.options.onReady();
-            this.options.onReady = null;
+            // this.options.onReady = null;
         }
-        this.createBuffer();
+        this.createBuffers();
     }
 
     private onMSEClose() {
@@ -360,23 +301,81 @@ export class MseMuxmer extends Event {
             return;
         }
 
-        if (!this.mediaSource) {
-            return;
-        }
+        // const controller = this.bufferControllers.get(data.type);
+        //
+        // if (this.mediaSource.sourceBuffers.length > 0 && controller) {
+        //     this.mediaSource.removeSourceBuffer(controller.sourceBuffer);
+        //     this.bufferControllers.delete(data.type);
+        // }
 
-        const buffer = this.sourceBuffers.get(data.type);
+        // if (this.mediaSource.sourceBuffers.length == 0) {
+        //     try {
+        //         this.mediaSource.endOfStream();
+        //     } catch (e) {
+        //         debug.error('mediasource is not available to end');
+        //     }
+        // }
+    }
 
-        if (this.mediaSource.sourceBuffers.length > 0 && buffer) {
-            this.mediaSource.removeSourceBuffer(buffer);
-        }
+    feed(data: MediaData) {
+        let remux = false,
+            chunks = new MediaChunks();
 
-        if (this.mediaSource.sourceBuffers.length == 0) {
-            try {
-                this.mediaSource.endOfStream();
-            } catch (e) {
-                debug.error('mediasource is not available to end');
+        // chunks.pts = data.pts;
+
+        if (!data || !this.remuxController) return;
+
+        const duration = data.duration ?? 0;
+        if (data.video) {
+            const nalus = H264Parser.extractNALu(data.video);
+            if (nalus.length > 0) {
+                chunks.video = this.getVideoFrames(nalus, duration);
+                remux = true;
             }
         }
+        if (data.audio) {
+            const audioFrames = OpusParser.extractOpus(data.audio);
+            if (audioFrames.length > 0) {
+                chunks.audio = this.getAudioFrames(audioFrames, duration);
+                remux = true;
+            }
+        }
+        if (!remux) {
+            debug.error('Input object must have video and/or audio property. Make sure it is not empty and valid typed array');
+            return;
+        }
+        this.remuxController.remux(chunks);
+    }
+
+    destroy() {
+        debug.log('MseMuxmer:destroy');
+
+        this.stopInterval();
+        if (this.mediaSource) {
+            try {
+                if (this.bufferControllers) {
+                    this.mediaSource.endOfStream();
+                }
+            } catch (e) {
+                debug.error(`mediasource is not available to end ${e.message}`);
+            }
+            // this.mediaSource = null;
+        }
+        if (this.remuxController) {
+            this.remuxController.destroy();
+            // this.remuxController = null;
+        }
+        this.bufferControllers.forEach(ctrl => {
+            ctrl.destroy();
+        });
+        this.bufferControllers.clear();
+        if (this.node) {
+            this.node.src = '';
+        }
+        this.node = null;
+        this.mseReady = false;
+        this.videoStarted = false;
+        this.bufferStarted = false;
     }
 
     getDts(type: TrackType) {
@@ -387,7 +386,7 @@ export class MseMuxmer extends Event {
         return this.options.node;
     }
 
-    connectNode(node:HTMLMediaElement) {
+    connectElement(node:HTMLMediaElement) {
         this.node = node;
         if (node) {
             node.src = URL.createObjectURL(this.mediaSource);

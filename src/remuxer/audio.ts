@@ -1,6 +1,6 @@
 import * as debug from '../util/debug';
-import {AACParser, AudioParser} from '../parsers/aac.js';
-import {BaseRemuxer, Mp4Sample} from './base.js';
+import {AACParser, AudioParser} from '../parsers/aac';
+import {BaseRemuxer, Mp4Sample} from './base';
 import {MediaFrames, TrackType} from "../controller/remux";
 import {OpusParser} from "../parsers/opus";
 
