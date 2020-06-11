@@ -78,7 +78,6 @@ export class MseMuxmer extends Event {
             this.options.fps = MseMuxmer.defaultsOptions.fps;
         }
         this.frameDuration = 1000 / this.options.fps;
-        // this.node = this.options.node;
 
         this.mediaSource = new MediaSource();
         this.setupMSE();
@@ -94,9 +93,10 @@ export class MseMuxmer extends Event {
 
     private setupMSE() {
 
-        // if (this.node) {
-        //     this.node.src = URL.createObjectURL(this.mediaSource);
-        // }
+        if (this.options.node) {
+            this.connectElement(this.options.node);
+        }
+
         this.mediaSource.addEventListener('sourceopen', this.onMSEOpen.bind(this));
         this.mediaSource.addEventListener('sourceclose', this.onMSEClose.bind(this));
         this.mediaSource.addEventListener('webkitsourceopen', this.onMSEOpen.bind(this));

@@ -4,7 +4,7 @@ export class Mp4 {
   static merge(...arrs: Uint8Array[]) {
 
     let size =  arrs.reduce((previousValue, val) => previousValue + val.length, 0);
-    const arr = new Int8Array(size);
+    const arr = new Uint8Array(size);
 
     let pos = 0;
     arrs.forEach(value => {
@@ -15,23 +15,27 @@ export class Mp4 {
   }
 }
 
+export type BoxItem = Box|Uint8Array;
+
+export type BoxDump = {
+  type:string;
+  size:number;
+  children:BoxDump[];
+};
+
 export class Box {
 
-  readonly type: string;
-  readonly payloads: Uint8Array[] = [];
+  private static box(type:number[], ...payload:BoxItem[]) {
 
+    const dataArr:Uint8Array[] = [];
+    payload.forEach(value => {
+      const data = value instanceof Box ? value.getData() : value;
+      if (data) {
+        dataArr.push(data);
+      }
+    });
 
-  constructor(type: string) {
-    this.type = type;
-  }
-
-  appendPayload(...payload:Uint8Array[]) {
-    this.payloads.push(...payload);
-  }
-
-  private static box(type:number[], ...payload:Uint8Array[]) {
-    // calculate the total size we need to allocate
-    let size = payload.reduce((prev, val) =>  prev + val.byteLength, 8);
+    const size = dataArr.reduce((prev, val) =>  prev + val.byteLength, 8);
 
     const result = new Uint8Array(size);
     result[0] = (size >> 24) & 0xff;
@@ -39,21 +43,47 @@ export class Box {
     result[2] = (size >> 8) & 0xff;
     result[3] = size & 0xff;
     result.set(type, 4);
-    // copy the payload into the result
 
-    for (let i = 0, pos = 8; i < payload.length; ++i) {
-      // copy payload[i] array @ offset size
-      result.set(payload[i], pos);
-      pos += payload[i].byteLength;
+    for (let i = 0, pos = 8; i < dataArr.length; ++i) {
+      result.set(dataArr[i], pos);
+      pos += dataArr[i].byteLength;
     }
     return result;
   }
 
-  private typeAsArray() {
-    return [this.type[0], this.type[1], this.type[2], this.type[3]];
+
+  readonly type: string;
+  readonly items: BoxItem[] = [];
+
+  constructor(type: string) {
+    this.type = type;
   }
 
-  data() {
-    Mp4.merge()
+  addItem(...items:BoxItem[]) {
+    this.items.push(...items);
+  }
+
+  private typeAsArray() {
+    return [this.type.charCodeAt(0), this.type.charCodeAt(1), this.type.charCodeAt(2), this.type.charCodeAt(3)];
+  }
+
+  getData() : Uint8Array {
+    return Box.box(this.typeAsArray(), ...this.items);
+  }
+
+  getContentSize() {
+    const size:number = this.items.reduce((prev, val) =>  prev + ((val instanceof Box) ? val.getContentSize() + 8 : val.byteLength), 0);
+    return size;
+  }
+
+  dump() : BoxDump {
+    const childDumps: BoxDump[] = [];
+
+
+    return {
+      type: this.type,
+      size: this.getContentSize(),
+      children: childDumps
+    };
   }
 }
