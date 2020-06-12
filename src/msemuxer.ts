@@ -215,12 +215,12 @@ export class MseMuxmer extends Event {
         }
 
         this.flashTimeout = setTimeout(()=> {
-            console.log('@mse flush data')
+            console.log('@mse flush data timeout:' + timeout)
 
             this.releaseBuffer();
             this.clearBuffer();
 
-            this.postFlushData((this.options.flushingTime ?? 100) / 2);
+            this.postFlushData(50);
         }, timeout);
     }
 
@@ -232,8 +232,6 @@ export class MseMuxmer extends Event {
     }
 
     private releaseBuffer() {
-        console.log('@mse releaseBuffer');
-
         this.bufferControllers.forEach(ctrl => {
             ctrl.doAppend();
         });
