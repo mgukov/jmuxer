@@ -218,7 +218,7 @@ export class MseMuxmer extends Event {
             this.releaseBuffer();
             this.clearBuffer();
 
-            this.postFlushData(50);
+            this.postFlushData(33.333);
         }, timeout);
     }
 
