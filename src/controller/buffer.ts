@@ -88,6 +88,9 @@ export default class BufferController extends Event {
 
     doAppend() {
         if (this.queue.length == 0 || this.sourceBuffer.updating) {
+            if (this.queue.length) {
+                console.log('@mse doAppend empty buffer');
+            }
             return;
         }
 
