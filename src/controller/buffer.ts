@@ -69,6 +69,8 @@ export default class BufferController extends Event {
         }
 
         if (this.sourceBuffer.buffered && this.sourceBuffer.buffered.length && !this.cleaning) {
+            console.log('@initCleanup cleanMaxLimit:' + cleanMaxLimit)
+
             for (let i = 0; i < this.sourceBuffer.buffered.length; ++i) {
                 let start = this.sourceBuffer.buffered.start(i);
                 let end = this.sourceBuffer.buffered.end(i);

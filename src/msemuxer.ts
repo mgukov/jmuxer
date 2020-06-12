@@ -253,6 +253,9 @@ export class MseMuxmer extends Event {
 
     private clearBuffer() {
         if (this.options.clearBuffer && (Date.now() - this.lastCleaningTime) > 10000) {
+
+            console.log('@do clearBuffer');
+
             this.bufferControllers.forEach(ctrl => {
                 let cleanMaxLimit = this.getSafeBufferClearLimit(this.node?.currentTime ?? 0);
 
