@@ -60,7 +60,7 @@ export class MseMuxmer extends Event {
     private frameCounter = 0;
     private videoStarted = false;
     private bufferStarted = false;
-    private interval: any;
+    private flashTimeout: any;
 
     constructor(options:MseMuxmerOptions) {
         super('mse_muxer');
@@ -88,7 +88,8 @@ export class MseMuxmer extends Event {
         /* events callback */
         this.remuxController.on('buffer', this.onBuffer.bind(this));
         this.remuxController.on('ready', this.createBuffers.bind(this));
-        this.startInterval();
+
+        this.postFlushData(this.options.flushingTime ?? 100);
     }
 
     private setupMSE() {
@@ -207,24 +208,32 @@ export class MseMuxmer extends Event {
         debug.log('MseMuxer buffer created');
     }
 
-    private startInterval() {
-        this.interval = setInterval(()=>{
-            if (this.bufferControllers) {
-                console.log('@mse flash data')
+    private postFlushData(timeout:number) {
 
-                this.releaseBuffer();
-                this.clearBuffer();
-            }
-        }, this.options.flushingTime);
+        if (this.flashTimeout) {
+            clearTimeout(this.flashTimeout);
+        }
+
+        this.flashTimeout = setTimeout(()=> {
+            console.log('@mse flush data')
+
+            this.releaseBuffer();
+            this.clearBuffer();
+
+            this.postFlushData((this.options.flushingTime ?? 100) / 2);
+        }, timeout);
     }
 
-    private stopInterval() {
-        if (this.interval) {
-            clearInterval(this.interval);
+    private stopFlushing() {
+        if (this.flashTimeout) {
+            clearTimeout(this.flashTimeout);
+            this.flashTimeout = undefined;
         }
     }
 
     private releaseBuffer() {
+        console.log('@mse releaseBuffer');
+
         this.bufferControllers.forEach(ctrl => {
             ctrl.doAppend();
         });
@@ -256,13 +265,13 @@ export class MseMuxmer extends Event {
     private clearBuffer() {
         if (this.options.clearBuffer && (Date.now() - this.lastCleaningTime) > 10000) {
 
-            console.log('@mse do clearBuffer');
+            console.log('@mse clearBuffer');
 
             this.bufferControllers.forEach(ctrl => {
                 let cleanMaxLimit = this.getSafeBufferClearLimit(this.node?.currentTime ?? 0);
 
-                const state = this.mediaSource.readyState;
-                const buffers = this.mediaSource.sourceBuffers;
+                // const state = this.mediaSource.readyState;
+                // const buffers = this.mediaSource.sourceBuffers;
 
                 ctrl.initCleanup(cleanMaxLimit);
             });
@@ -357,7 +366,7 @@ export class MseMuxmer extends Event {
     destroy() {
         debug.log('MseMuxmer:destroy');
 
-        this.stopInterval();
+        this.stopFlushing();
         if (this.mediaSource) {
             try {
                 if (this.bufferControllers) {
