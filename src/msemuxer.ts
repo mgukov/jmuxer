@@ -210,6 +210,8 @@ export class MseMuxmer extends Event {
     private startInterval() {
         this.interval = setInterval(()=>{
             if (this.bufferControllers) {
+                console.log('@mse flash data')
+
                 this.releaseBuffer();
                 this.clearBuffer();
             }
@@ -254,7 +256,7 @@ export class MseMuxmer extends Event {
     private clearBuffer() {
         if (this.options.clearBuffer && (Date.now() - this.lastCleaningTime) > 10000) {
 
-            console.log('@do clearBuffer');
+            console.log('@mse do clearBuffer');
 
             this.bufferControllers.forEach(ctrl => {
                 let cleanMaxLimit = this.getSafeBufferClearLimit(this.node?.currentTime ?? 0);
