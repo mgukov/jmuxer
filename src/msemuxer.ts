@@ -92,9 +92,8 @@ export class MseMuxmer extends Event {
     }
 
     private setupMSE() {
-
         if (this.options.node) {
-            this.connectElement(this.options.node);
+            this.attachElement(this.options.node);
         }
 
         this.mediaSource.addEventListener('sourceopen', this.onMSEOpen.bind(this));
@@ -386,10 +385,10 @@ export class MseMuxmer extends Event {
     }
 
     getElement() {
-        return this.options.node;
+        return this.node;
     }
 
-    connectElement(node:HTMLMediaElement) {
+    attachElement(node:HTMLMediaElement) {
         this.node = node;
         if (node) {
             node.src = URL.createObjectURL(this.mediaSource);
