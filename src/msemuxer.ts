@@ -89,7 +89,7 @@ export class MseMuxmer extends Event {
         this.remuxController.on('buffer', this.onBuffer.bind(this));
         this.remuxController.on('ready', this.createBuffers.bind(this));
 
-        this.postFlushData(this.options.flushingTime ?? 100);
+        this.postFlushData(Math.max(100, this.options.flushingTime ?? 100));
     }
 
     private setupMSE() {
