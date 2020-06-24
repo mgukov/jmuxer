@@ -113,6 +113,12 @@ export class Box {
   dump() : BoxDump {
     const childDumps: BoxDump[] = [];
 
+    this.items.forEach(value => {
+      if (value instanceof Box) {
+        childDumps.push(value.dump());
+      }
+    });
+
     return {
       type: this.type,
       size: this.getContentSize(),
