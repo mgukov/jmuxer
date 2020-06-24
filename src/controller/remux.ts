@@ -6,6 +6,7 @@ import {Event} from '../util/event';
 import {BaseRemuxer} from "../remuxer/base";
 import {NALU} from "../util/nalu";
 import {AudioRemuxer} from "../remuxer/audio";
+import {Mp4} from "../util/mp4";
 
 export enum TrackType {
     Both = 'both',
@@ -76,7 +77,7 @@ export default class RemuxController extends Event {
                     if (track) {
                         let data = {
                             type: type,
-                            payload: MP4.initSegment([track.mp4track], this.mediaDuration, track.mp4track.timescale),
+                            payload: Mp4.initSegment([track.mp4track], this.mediaDuration, track.mp4track.timescale),
                         };
                         this.dispatch('buffer', data);
                     }
@@ -90,9 +91,9 @@ export default class RemuxController extends Event {
                 if (muxer) {
                     let pay = muxer.getPayload();
                     if (pay && pay.byteLength) {
-                        const moof = MP4.moof(muxer.seq, muxer.dts, muxer.mp4track);
-                        const mdat = MP4.mdat(pay);
-                        let payload = Utils.appendByteArray(moof, mdat);
+                        const moof = Mp4.moof(muxer.seq, muxer.dts, muxer.mp4track);
+                        const mdat = Mp4.mdat(pay);
+                        let payload = Utils.appendByteArray(moof.getData(), mdat.getData());
                         let data = {
                             type: type,
                             payload: payload,
