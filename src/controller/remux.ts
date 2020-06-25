@@ -93,7 +93,7 @@ export default class RemuxController extends Event {
                     if (pay && pay.byteLength) {
                         const moof = Mp4.moof(muxer.seq, muxer.dts, muxer.mp4track);
 
-                        // console.log(JSON.stringify(moof.dump()));
+                        console.log(JSON.stringify(moof.dump()));
 
                         const mdat = Mp4.mdat(pay);
                         let payload = Utils.appendByteArray(moof.getData(), mdat.getData());
@@ -124,7 +124,6 @@ export default class RemuxController extends Event {
 
     remux(data:MediaChunks) {
         for (let type of this.trackTypes) {
-
             let samples = data.get(type);
             if (type === TrackType.Audio) {
                 const muxer = this.muxers.get(TrackType.Video);
