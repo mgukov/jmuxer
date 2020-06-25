@@ -101,13 +101,9 @@ export class Box {
     return Box.box(this.typeAsArray(), ...this.items);
   }
 
-  getContentSize() {
-    const size:number = this.items.reduce((prev, val) =>  prev + ((val instanceof Box) ? val.getContentSize() + 8 : val.byteLength), 0);
+  getSize() {
+    const size:number = this.items.reduce((prev, val) =>  prev + ((val instanceof Box) ? val.getSize() : val.byteLength), 8);
     return size;
-  }
-
-  getFullSize() {
-    return this.getContentSize() + 8;
   }
 
   dump() : BoxDump {
@@ -121,7 +117,7 @@ export class Box {
 
     return {
       type: this.type,
-      size: this.getContentSize(),
+      size: this.getSize(),
       children: childDumps
     };
   }
@@ -628,7 +624,7 @@ export class Mp4 {
           (baseMediaDecodeTime & 0xFF), // baseMediaDecodeTime
         ])),
         Mp4.trun(track,
-            sampleDependencyTable.getFullSize() +
+            sampleDependencyTable.getSize() +
             16 + // tfhd
             16 + // tfdt
             8 +  // traf header
@@ -650,9 +646,9 @@ export class Mp4 {
 
   static initSegment(tracks:Track[], duration:number, timescale:number) {
     const movie = Mp4.moov(tracks, duration, timescale);
-    const result = new Uint8Array(Mp4.FTYP.getFullSize() + movie.getFullSize());
+    const result = new Uint8Array(Mp4.FTYP.getSize() + movie.getSize());
     result.set(Mp4.FTYP.getData());
-    result.set(movie.getData(), Mp4.FTYP.getFullSize());
+    result.set(movie.getData(), Mp4.FTYP.getSize());
     return result;
   }
 }
