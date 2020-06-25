@@ -145,7 +145,7 @@ export class Mp4 {
     0x00, 0x00, // opcolor
   ]));
 
-  static SMHD =Box.make(Boxes.smhd, new Uint8Array([
+  public static SMHD = Box.make(Boxes.smhd, new Uint8Array([
     0x00, // version
     0x00, 0x00, 0x00, // flags
     0x00, 0x00, // balance

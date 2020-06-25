@@ -6,6 +6,7 @@ import { Event } from './util/event';
 import RemuxController, {TrackType, MediaChunks, MediaFrames} from './controller/remux';
 import BufferController from './controller/buffer';
 import {OpusParser} from "./parsers/opus";
+import {Mp4} from "./util/mp4";
 
 export type MseMuxmerOptions = {
     node?: HTMLMediaElement,
@@ -410,5 +411,10 @@ export class MseMuxmer extends Event {
             this.node.src = '';
         }
         this.node = null;
+    }
+
+
+    debug() {
+        console.log(Mp4.SMHD.dump());
     }
 }
