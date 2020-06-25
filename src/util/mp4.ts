@@ -683,6 +683,9 @@ export class Mp4 {
 
     static initSegment(tracks: Track[], duration: number, timescale: number) {
         const movie = Mp4.moov(tracks, duration, timescale);
+
+        console.log(movie);
+
         const result = new Uint8Array(Mp4.FTYP.getSize() + movie.getSize());
         result.set(Mp4.FTYP.getData());
         result.set(movie.getData(), Mp4.FTYP.getSize());
