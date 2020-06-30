@@ -1,5 +1,4 @@
 import * as debug from '../util/debug';
-import { MP4 } from '../util/mp4-generator';
 import { H264Remuxer } from '../remuxer/h264';
 import {Utils} from '../util/utils';
 import {Event} from '../util/event';
@@ -19,14 +18,10 @@ export type MediaFrames = {
     duration:number;
 };
 
-export class MediaChunks {
-    video:MediaFrames[] = [];
-    audio:MediaFrames[] = [];
+export type MediaChunks = {
+    data:MediaFrames[];
     pts?:number;
-
-    get(type:TrackType) {
-        return type === TrackType.Video ? this.video : this.audio;
-    }
+    type:TrackType;
 }
 
 
@@ -44,11 +39,11 @@ export default class RemuxController extends Event {
 
     addTrack(type:TrackType) {
         if (type === TrackType.Video || type === TrackType.Both) {
-            this.muxers.set(TrackType.Video, new H264Remuxer(0));
+            this.muxers.set(TrackType.Video, new H264Remuxer());
             this.trackTypes.push(TrackType.Video);
         }
         if (type === TrackType.Audio || type === TrackType.Both) {
-            this.muxers.set(TrackType.Audio, new AudioRemuxer(0));
+            this.muxers.set(TrackType.Audio, new AudioRemuxer());
             this.trackTypes.push(TrackType.Audio);
         }
     }
@@ -123,20 +118,20 @@ export default class RemuxController extends Event {
     }
 
     remux(data:MediaChunks) {
-        for (let type of this.trackTypes) {
-            let samples = data.get(type);
-            if (type === TrackType.Audio) {
-                const muxer = this.muxers.get(TrackType.Video);
-                if (muxer && !muxer.readyToDecode) {
-                    continue; /* if video is present, don't add audio until video get ready */
-                }
-            }
 
-            if (samples.length > 0) {
-                const muxer = this.muxers.get(type);
-                if (muxer) {
-                    muxer.remux(samples, data.pts);
-                }
+        let samples = data.data;
+        if (data.type === TrackType.Audio) {
+            const muxer = this.muxers.get(TrackType.Video);
+            if (muxer && !muxer.readyToDecode) {
+                this.flush();
+                return; /* if video is present, don't add audio until video get ready */
+            }
+        }
+
+        if (samples.length > 0) {
+            const muxer = this.muxers.get(data.type);
+            if (muxer) {
+                muxer.remux(samples, data.pts);
             }
         }
         this.flush();

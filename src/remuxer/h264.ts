@@ -9,13 +9,10 @@ import {NALU} from "../util/nalu";
 
 export class H264Remuxer extends BaseRemuxer {
 
-  private nextDts = 0;
-  protected timescale = 1000;
+  // protected timescale = 1000;
   private h264: H264Parser;
 
-  private init = false;
-
-  constructor(pts: number) {
+  constructor() {
     super({
       id: BaseRemuxer.getTrackID(),
       type: TrackType.Video,
@@ -26,8 +23,7 @@ export class H264Remuxer extends BaseRemuxer {
       timescale: 1000,
       duration: 1000,
       samples: [],
-    }, pts);
-    this.nextDts = pts;
+    });
     this.h264 = new H264Parser(this);
   }
 
@@ -38,13 +34,7 @@ export class H264Remuxer extends BaseRemuxer {
   }
 
   remux(samples: MediaFrames[], pts?: number) {
-    if (!this.init) {
-      this.init = true;
-      if (pts) {
-        this.nextDts = pts;
-        this.dts = pts;
-      }
-    }
+    super.remux(samples, pts);
 
     for (const sample of samples) {
       const units:NALU[] = [];

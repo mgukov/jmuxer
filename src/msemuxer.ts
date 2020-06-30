@@ -1,9 +1,8 @@
 import * as debug from './util/debug';
-import { NALU } from './util/nalu';
-import { H264Parser } from './parsers/h264';
-import { AACParser } from './parsers/aac';
-import { Event } from './util/event';
-import RemuxController, {TrackType, MediaChunks, MediaFrames} from './controller/remux';
+import {NALU} from './util/nalu';
+import {H264Parser} from './parsers/h264';
+import {Event} from './util/event';
+import RemuxController, {MediaChunks, MediaFrames, TrackType} from './controller/remux';
 import BufferController from './controller/buffer';
 import {OpusParser} from "./parsers/opus";
 import {Mp4} from "./util/mp4";
@@ -331,10 +330,13 @@ export class MseMuxmer extends Event {
     }
 
     feed(data: MediaData) {
-        let remux = false,
-            chunks = new MediaChunks();
-
-        // chunks.pts = data.pts;
+        let remux = false;
+        const chunks = <MediaChunks>{
+            data: [],
+            type: data.audio ? TrackType.Audio : TrackType.Video,
+            pts: data.pts
+        };
+        chunks.pts = data.pts;
 
         if (!data || !this.remuxController) return;
 
@@ -342,14 +344,14 @@ export class MseMuxmer extends Event {
         if (data.video) {
             const nalus = H264Parser.extractNALu(data.video);
             if (nalus.length > 0) {
-                chunks.video = this.getVideoFrames(nalus, duration);
+                chunks.data = this.getVideoFrames(nalus, duration);
                 remux = true;
             }
         }
         if (data.audio) {
             const audioFrames = OpusParser.extractOpus(data.audio);
             if (audioFrames.length > 0) {
-                chunks.audio = this.getAudioFrames(audioFrames, duration);
+                chunks.data = this.getAudioFrames(audioFrames, duration);
                 remux = true;
             }
         }

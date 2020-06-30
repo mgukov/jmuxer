@@ -1,5 +1,6 @@
 import {MediaFrames, TrackType} from "../controller/remux";
 import {NALU} from "../util/nalu";
+import * as debug from '../util/debug';
 
 let track_id = 1;
 
@@ -47,20 +48,21 @@ export type Track = {
 };
 
 export class BaseRemuxer {
-    seq = 1;
     readonly mp4track: Track;
-    readyToDecode = false;
     samples:Sample[] = [];
+
+    readyToDecode = false;
     isHDAvail = false;
-    dts:number;
+    seq = 1;
+    dts = -1;
+    nextDts = -1;
 
     static getTrackID() {
         return track_id++;
     }
 
-    protected constructor(track: Track, pts:number) {
+    protected constructor(track: Track) {
         this.mp4track = track;
-        this.dts = pts;
     }
 
     flush() {
@@ -80,7 +82,13 @@ export class BaseRemuxer {
     }
 
     remux(samples:MediaFrames[], pts?:number) {
+        if (pts != null && this.dts === -1) {
+            this.dts = pts;
+            this.nextDts = pts;
+        }
+
+        if (pts != null && this.nextDts != pts) {
+            debug.log('pts diff = ' + (this.nextDts - pts));
+        }
     }
-
-
 }

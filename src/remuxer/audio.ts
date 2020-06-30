@@ -6,12 +6,11 @@ import {OpusParser} from "../parsers/opus";
 
 export class AudioRemuxer extends BaseRemuxer {
 
-    nextDts = 0;
     timescale = 1000;
 
     private readonly parser: AudioParser;
 
-    constructor(pts:number) {
+    constructor() {
         super({
             id: BaseRemuxer.getTrackID(),
             type: TrackType.Audio,
@@ -21,8 +20,7 @@ export class AudioRemuxer extends BaseRemuxer {
             timescale: 1000,
             duration: 1000,
             samples: []
-        }, pts);
-        this.nextDts = pts;
+        });
         this.parser = new OpusParser(this);
     }
 
@@ -35,6 +33,8 @@ export class AudioRemuxer extends BaseRemuxer {
     }
 
     remux(samples:MediaFrames[], pts?:number) {
+        super.remux(samples, pts);
+
         for (let sample of samples) {
             const payload = sample.units as Uint8Array;
             const size = payload.byteLength;
